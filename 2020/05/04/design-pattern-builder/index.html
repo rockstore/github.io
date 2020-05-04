@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言在开发中，经常用到builder设计模式，但感觉最常见的应用场景就是构造对象参数较多的时候，本文将builder模式梳理总结一下。 定义非要给builder模式一个定义，我就查看了《Android源码设计模式解析与实战》，以下是其给出的定义:  将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示。  这样的总结比较经典，但是感觉离彻底明白其中的含义还差点距离。前半句可以理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="建造者模式">
+<meta property="og:url" content="http://yoursite.com/2020/05/04/design-pattern-builder/index.html">
+<meta property="og:site_name" content="Rock">
+<meta property="og:description" content="前言在开发中，经常用到builder设计模式，但感觉最常见的应用场景就是构造对象参数较多的时候，本文将builder模式梳理总结一下。 定义非要给builder模式一个定义，我就查看了《Android源码设计模式解析与实战》，以下是其给出的定义:  将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示。  这样的总结比较经典，但是感觉离彻底明白其中的含义还差点距离。前半句可以理">
+<meta property="og:image" content="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/builder.png">
+<meta property="article:published_time" content="2020-05-04T15:49:11.000Z">
+<meta property="article:modified_time" content="2020-05-04T15:50:28.801Z">
+<meta property="article:author" content="rockstore">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/builder.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/05/04/design-pattern-builder/"/>
+
+
+
+
+
+  <title>建造者模式 | Rock</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Rock</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/04/design-pattern-builder/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">建造者模式</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-04T23:49:11+08:00">
+                2020-05-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
+                    <span itemprop="name">设计模式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在开发中，经常用到builder设计模式，但感觉最常见的应用场景就是构造对象参数较多的时候，本文将builder模式梳理总结一下。</p>
+<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>非要给builder模式一个定义，我就查看了《Android源码设计模式解析与实战》，以下是其给出的定义:</p>
+<blockquote>
+<p>将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示。</p>
+</blockquote>
+<p>这样的总结比较经典，但是感觉离彻底明白其中的含义还差点距离。前半句可以理解为将一个对象的创建过程分多步，后半句可以这样理解，使用同样的构建过程，传递不同的参数会产生不同的结果。</p>
+<h2 id="经典写法"><a href="#经典写法" class="headerlink" title="经典写法"></a>经典写法</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/builder.png" alt=""><br>上图为builder经典写法的uml，其实在实际开发过程中，Director部分经常就被去掉了。<br>如下所示，定义了AbstractBuilder:</p>
+<pre><code>public abstract class AbstractBuilder {
+    public abstract void buildPart1(int numOfWheel);
+    public abstract void buildPart2(int numOfSeat);
+    public abstract void buildPart3(int capacity);
+    public abstract Vehicle build();
+}</code></pre><p>demo的目标是将车辆Vehicle的构建分离，demo中的Product为Vehicle类型，可以看下Vehicle的定义：</p>
+<pre><code>public abstract class Vehicle {
+    // 车轮的数量
+    protected int numOfWheel;
+    // 座椅的数量
+    protected int numOfSeat;
+    // 载重，car按照人数，truck按照吨数
+    protected int capacity;
+
+    public void setNumOfWheel(int numOfWheel) {
+        this.numOfWheel = numOfWheel;
+    }
+    public void setNumOfSeat(int numOfSeat) {
+        this.numOfSeat = numOfSeat;
+    }
+    public abstract void setCapacity(int capacity);
+}</code></pre><p>demo中Vehicle的子类有Car(小轿车)和Truck(卡车)，Car类的定义如下：</p>
+<pre><code>public class Car extends Vehicle {
+
+    @Override
+    public void setCapacity(int capacity) {
+        // TODO Auto-generated method stub
+        super.capacity = capacity;
+    }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return &quot;car parameter:&quot; + numOfWheel + &quot;-&quot; + numOfSeat + &quot;-&quot; + capacity;
+    }
+}</code></pre><p>Truck的定义如下：</p>
+<pre><code>public class Truck extends Vehicle {
+
+    @Override
+    public void setCapacity(int capacity) {
+        // TODO Auto-generated method stub
+        super.capacity = capacity;
+    }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return &quot;car parameter:&quot; + numOfWheel + &quot;-&quot; + numOfSeat + &quot;-&quot; + capacity + &quot; ton&quot;;
+    }
+}</code></pre><p>接下来就看下Car的builder CarBuilder:</p>
+<pre><code>public class CarBuilder extends AbstractBuilder {
+    private Car car = new Car();
+
+    @Override
+    public void buildPart1(int numOfWheel) {
+        // TODO Auto-generated method stub
+        car.setNumOfWheel(numOfWheel);
+    }
+
+    @Override
+    public void buildPart2(int numOfSeat) {
+        // TODO Auto-generated method stub
+        car.setNumOfSeat(numOfSeat);
+    }
+
+    public void buildPart3(int capacity) {
+        // TODO Auto-generated method stub
+        car.setCapacity(capacity);
+    }
+
+    public Vehicle build() {
+        return car;
+    }
+}</code></pre><p>TruckBuilder定义如下：</p>
+<pre><code>public class TruckBuilder extends AbstractBuilder {
+    private Truck truck = new Truck();
+    @Override
+    public void buildPart1(int numOfWheel) {
+        // TODO Auto-generated method stub
+        truck.setNumOfWheel(numOfWheel);
+    }
+
+    @Override
+    public void buildPart2(int numOfSeat) {
+        // TODO Auto-generated method stub
+        truck.setNumOfSeat(numOfSeat);
+    }
+
+    @Override
+    public void buildPart3(int capacity) {
+        // TODO Auto-generated method stub
+        truck.setCapacity(capacity);
+    }
+
+    @Override
+    public Vehicle build() {
+        // TODO Auto-generated method stub
+        return truck;
+    }
+}</code></pre><p>以上定义了CarBuiler， TruckBuiler。虽然在实际开发中经常会省略掉Director部分，为了演示，demo也定义了Director</p>
+<pre><code>public class Director {
+    private AbstractBuilder builder;
+    public Director(AbstractBuilder builder) {
+        this.builder = builder;
+    }
+    public void construct(int numOfWheel, int numOfSeat, int capacity) {
+        if (builder != null) {
+            builder.buildPart1(numOfWheel);
+            builder.buildPart2(numOfSeat);
+            builder.buildPart3(capacity);
+        }
+    }
+}</code></pre><p>OK，所有需要定义的部分已经完成，接下来就去调用一下：</p>
+<pre><code>public class Client {
+    public static void main(String [] args) {
+        AbstractBuilder builder = new CarBuilder();
+        Director director = new Director(builder);
+        director.construct(4, 5, 5);
+        Car car = (Car) builder.build();
+        System.out.println(car);
+
+        AbstractBuilder builder2 = new TruckBuilder();
+        Director director2 = new Director(builder2);
+        director2.construct(8, 2, 5);
+        Truck truck = (Truck) builder2.build();
+        System.out.println(truck);
+    }
+}</code></pre><p>程序输入如下：<br>car parameter:4-5-5<br>truck parameter:8-2-5 ton</p>
+<p>demo演示部分将Vehicle的构造过程分3步，执行完3步构建后返回实例对象。</p>
+<h2 id="日常写法"><a href="#日常写法" class="headerlink" title="日常写法"></a>日常写法</h2><p>上面的demo是经典的写法，但在实际开发中，很少写的那么标准或者那么复杂，大多数情况下builder模式主要是为了防止在构建对象时传递太多的参数。查看下以下demo:</p>
+<pre><code>public class Student {
+    private String name;
+    private String nickName;
+    private String sex;
+    private int age;
+    private int weight;
+    private int height;
+
+    public Student(String name, String nickName, String sex, int age, int weight, int height) {
+        // TODO Auto-generated constructor stub
+        this.name = name;
+        this.nickName = nickName;
+        this.sex = sex;
+        this.age = age;
+        this.weight = weight;
+        this.height = height;
+    }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return &quot;student info:name=&quot; + name + &quot;\n&quot; +
+                            &quot;nickname=&quot; + nickName + &quot;\n&quot; +
+                            &quot;sex=&quot; + sex + &quot;\n&quot; + 
+                            &quot;age=&quot; + age + &quot;\n&quot; + 
+                            &quot;weight=&quot; + weight + &quot;\n&quot; +
+                            &quot;height=&quot; + height;
+    }
+
+    public static class Builder {
+        private String name;
+        private String nickName;
+        private String sex;
+        private int age;
+        private int weight;
+        private int height;
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+        public Builder nickName(String nickName) {
+            this.nickName = nickName;
+            return this;
+        }
+        public Builder sex(String sex) {
+            this.sex = sex;
+            return this;
+        }
+        public Builder age(int age) {
+            this.age = age;
+            return this;
+        }
+        public Builder weight(int weight) {
+            this.weight = weight;
+            return this;
+        }
+        public Builder height(int height) {
+            this.height = height;
+            return this;
+        }
+        public Student build() {
+            return new Student(name, nickName, sex, age, weight, height);
+        }
+    } 
+}</code></pre><p>以下是测试程序：</p>
+<pre><code>public class Client {
+    public static void main(String [] args) {
+        Student student = new Student.Builder().name(&quot;rock&quot;)
+                                               .nickName(&quot;store&quot;)
+                                               .sex(&quot;boy&quot;)
+                                               .age(12)
+                                               .weight(60)
+                                                .height(176).build();
+        System.out.println(student);
+    }
+}</code></pre><p>程序运行结果如下：</p>
+<pre><code>student info:name=rock
+nickname=store
+sex=boy
+age=12
+weight=60
+height=176</code></pre><h2 id="Android中Builder使用场景"><a href="#Android中Builder使用场景" class="headerlink" title="Android中Builder使用场景"></a>Android中Builder使用场景</h2><p>在开发过程中，经常使用的builder模式其实就是上文所说的日常写法，Android中最常见的builder模式就是AlertDialog的创建过程了，以下是AlertDialog创建过程的常见写法。</p>
+<pre><code>AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                                             .setTitle(title)
+                                             .setView(view)
+                                             .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+
+                                                }
+                                            })
+                                            .setNegativeButton(android.R.string.cancel, null);
+builder.create().show();</code></pre><p>感觉很熟悉，这就是我们最常用的AlertDialog的构建过程。扒一扒源码，由于AlertDialog.Builder的源码较多，就不全部贴出来，感兴趣的同学可以自行看一下。</p>
+<pre><code>public static class Builder {
+    private final AlertController.AlertParams P;</code></pre><p>​<br>        public Builder(Context context) {<br>            this(context, resolveDialogTheme(context, ResourceId.ID_NULL));<br>        }</p>
+<p>​<br>       ……</p>
+<pre><code>public Builder setTitle(@StringRes int titleId) {
+    P.mTitle = P.mContext.getText(titleId);
+    return this;
+}</code></pre><p>​<br>        public Builder setTitle(CharSequence title) {<br>            P.mTitle = title;<br>            return this;<br>        }</p>
+<p>​<br>        public Builder setCustomTitle(View customTitleView) {<br>            P.mCustomTitleView = customTitleView;<br>            return this;<br>        }</p>
+<pre><code>......</code></pre><p>​<br>        public Builder setMessage(CharSequence message) {<br>            P.mMessage = message;<br>            return this;<br>        }</p>
+<pre><code>   public Builder setPositiveButton(@StringRes int textId, final OnClickListener listener) {
+        P.mPositiveButtonText = P.mContext.getText(textId);
+        P.mPositiveButtonListener = listener;
+        return this;
+    }
+    ......
+
+    public AlertDialog create() {
+        // Context has already been wrapped with the appropriate theme.
+        final AlertDialog dialog = new AlertDialog(P.mContext, 0, false);
+        P.apply(dialog.mAlert);
+        dialog.setCancelable(P.mCancelable);
+        if (P.mCancelable) {
+            dialog.setCanceledOnTouchOutside(true);
+        }
+        dialog.setOnCancelListener(P.mOnCancelListener);
+        dialog.setOnDismissListener(P.mOnDismissListener);
+        if (P.mOnKeyListener != null) {
+            dialog.setOnKeyListener(P.mOnKeyListener);
+        }
+        return dialog;
+    }
+
+}</code></pre><p>AlertDialog.Buidler类中定义各种set方法，执行完set方法之后再执行create方法便创建了一个AlertDialog。这应该是一个标准的builder模式了。可以发现AlertDialog.Builder执行set方法，其实就是将set参数复制给了对象P。对象P是什么结构呢？</p>
+<pre><code>public static class AlertParams {
+    public final Context mContext;
+    public final LayoutInflater mInflater;
+
+    public int mIconId = 0;
+    public Drawable mIcon;
+    public int mIconAttrId = 0;
+    public CharSequence mTitle;
+    public View mCustomTitleView;
+    public CharSequence mMessage;
+    public CharSequence mPositiveButtonText;
+    public DialogInterface.OnClickListener mPositiveButtonListener;
+    public CharSequence mNegativeButtonText;
+    public DialogInterface.OnClickListener mNegativeButtonListener;
+    public CharSequence mNeutralButtonText;
+    public DialogInterface.OnClickListener mNeutralButtonListener;
+    public boolean mCancelable;
+    public DialogInterface.OnCancelListener mOnCancelListener;
+    public DialogInterface.OnDismissListener mOnDismissListener;
+    public DialogInterface.OnKeyListener mOnKeyListener;
+    public CharSequence[] mItems;
+    public ListAdapter mAdapter;
+    public DialogInterface.OnClickListener mOnClickListener;
+    public int mViewLayoutResId;
+    public View mView;
+    public int mViewSpacingLeft;
+    public int mViewSpacingTop;
+    public int mViewSpacingRight;
+    public int mViewSpacingBottom;
+    public boolean mViewSpacingSpecified = false;
+    public boolean[] mCheckedItems;
+    public boolean mIsMultiChoice;
+    public boolean mIsSingleChoice;
+    public int mCheckedItem = -1;
+    public DialogInterface.OnMultiChoiceClickListener mOnCheckboxClickListener;
+    public Cursor mCursor;
+    public String mLabelColumn;
+    public String mIsCheckedColumn;
+    public boolean mForceInverseBackground;
+    public AdapterView.OnItemSelectedListener mOnItemSelectedListener;
+    public OnPrepareListViewListener mOnPrepareListViewListener;
+    public boolean mRecycleOnMeasure = true;
+
+    ......
+}</code></pre><p>可以发现，AlertController.AlertParams类型的对象P其实就是存放了构建AlertDialog需要的各种参数。对象P中海油其他函数操作，感兴趣的同学可以去看一下。</p>
+<p>将参数保存到P对象，然后执行create函数，创建新的AlertDialog对象，然后P中存放的属性设置给新建的AlertDilaog对象，这样，就完成了AlertDialog的构建。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Builder模式的目标是将复杂对象的创建过程进行分解，使对象的构建与表示分离，使得同样的构建过程可以创建不同的表示。在实际开发过程中，通常是在复杂对象内部申明静态内部类Builder，在Builder中保存复杂对象的属性，然后使用create或者build函数将保存的属性设置给对象。</p>
+<p>其实日常开发过程中使用builder模式还没有让我们领略到builer模式的强大，建议参考下这篇文章体会一下：<a href="https://www.cnblogs.com/happyhippy/archive/2010/09/01/1814287.html" target="_blank" rel="noopener">https://www.cnblogs.com/happyhippy/archive/2010/09/01/1814287.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/05/04/design-pattern-abstract-factory/" rel="next" title="抽象工厂">
+                <i class="fa fa-chevron-left"></i> 抽象工厂
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/05/04/design-pattern-proto/" rel="prev" title="原型模式">
+                原型模式 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rockstore</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#定义"><span class="nav-number">2.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#经典写法"><span class="nav-number">3.</span> <span class="nav-text">经典写法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#日常写法"><span class="nav-number">4.</span> <span class="nav-text">日常写法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Android中Builder使用场景"><span class="nav-number">5.</span> <span class="nav-text">Android中Builder使用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rockstore</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
