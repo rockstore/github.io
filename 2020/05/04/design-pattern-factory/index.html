@@ -40,7 +40,7 @@
 
   
   
-  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+  <link href="/go/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
 
 
 
@@ -48,21 +48,21 @@
 
 
 
-<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+<link href="/go/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
-
-
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+<link href="/go/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
 
 
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+  <link rel="apple-touch-icon" sizes="180x180" href="/go/images/apple-touch-icon-next.png?v=5.1.4">
 
 
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+  <link rel="icon" type="image/png" sizes="32x32" href="/go/images/favicon-32x32-next.png?v=5.1.4">
 
 
-  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+  <link rel="icon" type="image/png" sizes="16x16" href="/go/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/go/images/logo.svg?v=5.1.4" color="#222">
 
 
 
@@ -82,7 +82,7 @@
 <meta name="description" content="前言相对于其他设计模式，工厂模式从概念上很好理解，就是将对象创建工作交给一个工厂，工厂根据需求返回我们需要的对象。但在Android开发过程中，感觉涉及到的工厂模式并不多，本文将从Activity实例创建入手，分析工厂模式在Android中的应用。 定义定义对象创建的接口，根据需求返回对象实例。 实现简单工厂其实使用工厂模式时，简单工厂常常会被我们忽略，以上为简单工厂的UML类图，我们首先看下简单">
 <meta property="og:type" content="article">
 <meta property="og:title" content="工厂模式">
-<meta property="og:url" content="http://yoursite.com/2020/05/04/design-pattern-factory/index.html">
+<meta property="og:url" content="https://rockstore.github.io/go/2020/05/04/design-pattern-factory/index.html">
 <meta property="og:site_name" content="Rock">
 <meta property="og:description" content="前言相对于其他设计模式，工厂模式从概念上很好理解，就是将对象创建工作交给一个工厂，工厂根据需求返回我们需要的对象。但在Android开发过程中，感觉涉及到的工厂模式并不多，本文将从Activity实例创建入手，分析工厂模式在Android中的应用。 定义定义对象创建的接口，根据需求返回对象实例。 实现简单工厂其实使用工厂模式时，简单工厂常常会被我们忽略，以上为简单工厂的UML类图，我们首先看下简单">
 <meta property="og:image" content="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/simple_factory.png">
@@ -98,7 +98,7 @@
 <script type="text/javascript" id="hexo.configurations">
   var NexT = window.NexT || {};
   var CONFIG = {
-    root: '/',
+    root: '/go/',
     scheme: 'Mist',
     version: '5.1.4',
     sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
@@ -121,7 +121,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2020/05/04/design-pattern-factory/"/>
+  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/04/design-pattern-factory/"/>
 
 
 
@@ -155,7 +155,7 @@
     
 
     <div class="custom-logo-site-title">
-      <a href="/"  class="brand" rel="start">
+      <a href="/go/"  class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">Rock</span>
         <span class="logo-line-after"><i></i></span>
@@ -183,7 +183,7 @@
       
         
         <li class="menu-item menu-item-home">
-          <a href="/" rel="section">
+          <a href="/go/" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
             
@@ -193,7 +193,7 @@
       
         
         <li class="menu-item menu-item-tags">
-          <a href="/tags" rel="section">
+          <a href="/go/tags" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
             
@@ -203,7 +203,7 @@
       
         
         <li class="menu-item menu-item-categories">
-          <a href="/categories" rel="section">
+          <a href="/go/categories" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
             
@@ -213,7 +213,7 @@
       
         
         <li class="menu-item menu-item-archives">
-          <a href="/archives" rel="section">
+          <a href="/go/archives" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
             
@@ -254,12 +254,12 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/04/design-pattern-factory/">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/04/design-pattern-factory/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="rockstore">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/go/images/avatar.gif">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -306,7 +306,7 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
+                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
                     <span itemprop="name">设计模式</span>
                   </a>
                 </span>
@@ -536,7 +536,7 @@ cat eats</code></pre><p>相对于简单工厂，工厂将对象的创建做了�
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2020/05/04/design-pattern-singleton/" rel="next" title="单例模式">
+              <a href="/go/2020/05/04/design-pattern-singleton/" rel="next" title="单例模式">
                 <i class="fa fa-chevron-left"></i> 单例模式
               </a>
             
@@ -546,7 +546,7 @@ cat eats</code></pre><p>相对于简单工厂，工厂将对象的创建做了�
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2020/05/04/design-pattern-abstract-factory/" rel="prev" title="抽象工厂">
+              <a href="/go/2020/05/04/design-pattern-abstract-factory/" rel="prev" title="抽象工厂">
                 抽象工厂 <i class="fa fa-chevron-right"></i>
               </a>
             
@@ -623,7 +623,7 @@ cat eats</code></pre><p>相对于简单工厂，工厂将对象的创建做了�
             
               <div class="site-state-item site-state-posts">
               
-                <a href="/archives%7C%7C%20archive">
+                <a href="/go/archives%7C%7C%20archive">
               
                   <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">日志</span>
@@ -635,7 +635,7 @@ cat eats</code></pre><p>相对于简单工厂，工厂将对象的创建做了�
               
               
               <div class="site-state-item site-state-categories">
-                <a href="/categories/index.html">
+                <a href="/go/categories/index.html">
                   <span class="site-state-item-count">1</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
@@ -646,7 +646,7 @@ cat eats</code></pre><p>相对于简单工厂，工厂将对象的创建做了�
               
               
               <div class="site-state-item site-state-tags">
-                <a href="/tags/index.html">
+                <a href="/go/tags/index.html">
                   <span class="site-state-item-count">1</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
@@ -777,57 +777,57 @@ cat eats</code></pre><p>相对于简单工厂，工厂将对象的创建做了�
 
   
   
-    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+    <script type="text/javascript" src="/go/lib/jquery/index.js?v=2.1.3"></script>
   
 
   
   
-    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+    <script type="text/javascript" src="/go/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
   
 
   
   
-    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+    <script type="text/javascript" src="/go/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
   
 
   
   
-    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+    <script type="text/javascript" src="/go/lib/velocity/velocity.min.js?v=1.2.1"></script>
   
 
   
   
-    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+    <script type="text/javascript" src="/go/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
   
 
   
   
-    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+    <script type="text/javascript" src="/go/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
   
-
-
-  
-
-
-  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
-
-  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
-
-
-
-  
-  
-
-  
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
-
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+  <script type="text/javascript" src="/go/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/go/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/bootstrap.js?v=5.1.4"></script>
 
 
 
