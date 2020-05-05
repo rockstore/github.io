@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/go/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/go/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/go/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/go/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/go/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/go/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/go/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="策略模式定义策略模式是一种对象行为模式，核心点在于算法和算法的实现分开，实现算法的委派  UML   如上图所示，策略模式涉及到三种角色，环境（Context）角色，抽象策略（Strategy）角色，具体策略（StrategyA，StrategyB，StrategyC）  环境(Context)角色 环境角色的目的是持有策略角色的对象  抽象策略(Strategy)角色 定义策略接口  具体策略角">
+<meta property="og:type" content="article">
+<meta property="og:title" content="策略模式">
+<meta property="og:url" content="https://rockstore.github.io/go/2020/05/05/design-pattern-strategy/index.html">
+<meta property="og:site_name" content="Rock">
+<meta property="og:description" content="策略模式定义策略模式是一种对象行为模式，核心点在于算法和算法的实现分开，实现算法的委派  UML   如上图所示，策略模式涉及到三种角色，环境（Context）角色，抽象策略（Strategy）角色，具体策略（StrategyA，StrategyB，StrategyC）  环境(Context)角色 环境角色的目的是持有策略角色的对象  抽象策略(Strategy)角色 定义策略接口  具体策略角">
+<meta property="og:image" content="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/strategy.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/strategy_adapter.png">
+<meta property="article:published_time" content="2020-05-05T02:01:26.000Z">
+<meta property="article:modified_time" content="2020-05-05T02:02:08.336Z">
+<meta property="article:author" content="rockstore">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/strategy.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/go/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/05/design-pattern-strategy/"/>
+
+
+
+
+
+  <title>策略模式 | Rock</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/go/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Rock</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/go/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/go/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/go/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/go/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-strategy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">策略模式</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T10:01:26+08:00">
+                2020-05-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
+                    <span itemprop="name">设计模式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="策略模式"><a href="#策略模式" class="headerlink" title="策略模式"></a>策略模式</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>策略模式是一种对象行为模式，核心点在于算法和算法的实现分开，实现算法的委派</p>
+<ul>
+<li><h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2></li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/strategy.png" alt=""></p>
+<p>如上图所示，策略模式涉及到三种角色，环境（Context）角色，抽象策略（Strategy）角色，具体策略（StrategyA，StrategyB，StrategyC）</p>
+<ul>
+<li><p>环境(Context)角色</p>
+<p>环境角色的目的是持有策略角色的对象</p>
+</li>
+<li><p>抽象策略(Strategy)角色</p>
+<p>定义策略接口</p>
+</li>
+<li><p>具体策略角色</p>
+<p>实现策略接口，不同业务场景可以根据自己的需求，实现自己的策略</p>
+</li>
+</ul>
+<h2 id="简单-Demo-实现"><a href="#简单-Demo-实现" class="headerlink" title="简单 Demo 实现"></a>简单 Demo 实现</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Context</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> Strategy strategy;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setStrategy</span><span class="params">(Strategy strategy)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.strategy = strategy;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomthing</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (strategy != <span class="keyword">null</span>) &#123;</span><br><span class="line">			strategy.operation();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Strategy</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteStrategyA</span> <span class="keyword">implements</span> <span class="title">Strategy</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteStrategyA"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteStrategyB</span> <span class="keyword">implements</span> <span class="title">Strategy</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteStrategyB"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    Context context = <span class="keyword">new</span> Context();</span><br><span class="line"></span><br><span class="line">    Strategy strategyA = <span class="keyword">new</span> ConcreteStrategyA();</span><br><span class="line">    context.setStrategy(strategyA);</span><br><span class="line">    context.doSomthing();</span><br><span class="line"></span><br><span class="line">    Strategy strategyB = <span class="keyword">new</span> ConcreteStrategyB();</span><br><span class="line">    context.setStrategy(strategyB);</span><br><span class="line">    context.doSomthing();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行结果如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ConcreteStrategyA</span><br><span class="line">ConcreteStrategyB</span><br></pre></td></tr></table></figure>
+
+<h2 id="场景使用"><a href="#场景使用" class="headerlink" title="场景使用"></a>场景使用</h2><p>在上面的 Demo 实现中，了解了策略模式的简单实现。现在有这样一个场景，商场在有积分策略，平时顾客在购买商品时，购买多少钱商品，增加多少积分，为了增加节假日的销量，商场决定，在清明节期间购买商品积 2 倍积分；在元旦，劳动节，端午节，中秋节期间购买商品积 3 倍积分；在国庆节和春节期间购买商品 4 倍积分。</p>
+<p>上面的需求中，根本需求是进行积分，仅仅是根据日期的不同，选择不同的策略积分，因此选择使用策略模式。</p>
+<p>使用策略模式，需要分析如何定义三种不同的角色，在本需求中，可以积分操作需要根据不同的日期使用不同的算法，故积分操作需要被定义为策略角色，不同节假日的不同积分方式被定义为具体策略角色，而使用不同的策略进行积分的商场积分系统被定义为场景角色</p>
+<p><strong>抽象策略角色</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ICalStrategy</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">int</span> <span class="title">calIntegral</span><span class="params">(<span class="keyword">int</span> price)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>具体策略</strong></p>
+<p>具体策略有四种，1 倍积分，2 倍积分，3倍积分以及 4 倍积分</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CommonStrategy</span> <span class="keyword">implements</span> <span class="title">ICalStrategy</span> </span>&#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">calIntegral</span><span class="params">(<span class="keyword">int</span> price)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// 1 倍积分</span></span><br><span class="line">		<span class="keyword">return</span> price;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DoubleStrategy</span> <span class="keyword">implements</span> <span class="title">ICalStrategy</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">calIntegral</span><span class="params">(<span class="keyword">int</span> price)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// 2 倍积分</span></span><br><span class="line">		<span class="keyword">return</span> price * <span class="number">2</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TripleStrategy</span> <span class="keyword">implements</span> <span class="title">ICalStrategy</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">calIntegral</span><span class="params">(<span class="keyword">int</span> price)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// 3 倍积分</span></span><br><span class="line">		<span class="keyword">return</span> price * <span class="number">3</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FourfoldStrategy</span> <span class="keyword">implements</span> <span class="title">ICalStrategy</span> </span>&#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">calIntegral</span><span class="params">(<span class="keyword">int</span> price)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// 4 倍积分</span></span><br><span class="line">		<span class="keyword">return</span> price * <span class="number">4</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>场景角色</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.apm.windseeker.strategy;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Date;</span><br><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ShopSystem</span> </span>&#123;</span><br><span class="line">	<span class="comment">// 使用手机号标识一个用户，记录用户当前的积分</span></span><br><span class="line">	<span class="keyword">private</span> HashMap&lt;String, Integer&gt; mItegrals = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">	<span class="comment">// 当前使用的积分计算策略</span></span><br><span class="line">	<span class="keyword">private</span> ICalStrategy mStrategy;</span><br><span class="line">	</span><br><span class="line">    <span class="comment">// 四种积分计算策略</span></span><br><span class="line">	<span class="keyword">private</span> ICalStrategy commonStrategy = <span class="keyword">new</span> CommonStrategy();</span><br><span class="line">	<span class="keyword">private</span> ICalStrategy doubleStrategy 	= <span class="keyword">new</span> DoubleStrategy();</span><br><span class="line">	<span class="keyword">private</span> ICalStrategy tripleStrategy = <span class="keyword">new</span> TripleStrategy();</span><br><span class="line">	<span class="keyword">private</span> ICalStrategy fourfoldStrategy 	= <span class="keyword">new</span> FourfoldStrategy();</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">boolean</span> isCommonDay 		= <span class="keyword">true</span>;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">boolean</span> isDoubleDay 			= <span class="keyword">false</span>;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">boolean</span> isTripleDay 		= <span class="keyword">false</span>;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">boolean</span> isFourfoldDay 			= <span class="keyword">false</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ShopSystem</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 初始化时添加 4 个用户</span></span><br><span class="line">		mItegrals.put(<span class="string">"13212765437"</span>, <span class="number">0</span>);</span><br><span class="line">		mItegrals.put(<span class="string">"13112775458"</span>, <span class="number">0</span>);</span><br><span class="line">		mItegrals.put(<span class="string">"15613465464"</span>, <span class="number">0</span>);</span><br><span class="line">		mItegrals.put(<span class="string">"13912765424"</span>, <span class="number">0</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getItegralByTel</span><span class="params">(String tel)</span> </span>&#123;</span><br><span class="line">		Integer itegral = mItegrals.get(tel);</span><br><span class="line">		<span class="keyword">if</span> (itegral != <span class="keyword">null</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> itegral;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">    <span class="comment">// 用户购买完商品后为用户计算新的积分</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">incIntegral</span><span class="params">(String tel, <span class="keyword">int</span> price)</span> </span>&#123;</span><br><span class="line">		Integer itegral = mItegrals.get(tel);</span><br><span class="line">		<span class="keyword">if</span> (itegral != <span class="keyword">null</span>) &#123;</span><br><span class="line">			mItegrals.put(tel, itegral + calIntegral(price));</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">    <span class="comment">// 使用不同的策略计算应当增加的积分</span></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">calIntegral</span><span class="params">(<span class="keyword">int</span> price)</span> </span>&#123;</span><br><span class="line">		Date date = <span class="keyword">new</span> Date();</span><br><span class="line">		<span class="keyword">if</span> (isCommonDay(date)) &#123;</span><br><span class="line">			mStrategy = commonStrategy;</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (isDoubleDay(date)) &#123;</span><br><span class="line">			mStrategy = doubleStrategy;</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (isTripleDay(date)) &#123;</span><br><span class="line">			mStrategy = tripleStrategy;</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (isFourfoldDay(date)) &#123;</span><br><span class="line">			mStrategy = fourfoldStrategy;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (mStrategy != <span class="keyword">null</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> mStrategy.calIntegral(price);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">isCommonDay</span><span class="params">(Date date)</span> </span>&#123;<span class="keyword">return</span> isCommonDay;&#125;</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">isDoubleDay</span><span class="params">(Date date)</span> </span>&#123;<span class="keyword">return</span> isDoubleDay;&#125;</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">isTripleDay</span><span class="params">(Date date)</span> </span>&#123;<span class="keyword">return</span> isTripleDay;&#125;</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">isFourfoldDay</span><span class="params">(Date date)</span> </span>&#123;<span class="keyword">return</span> isFourfoldDay;&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">setCommonDay</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		isCommonDay = <span class="keyword">true</span>;</span><br><span class="line">		isDoubleDay = <span class="keyword">false</span>;</span><br><span class="line">		isTripleDay = <span class="keyword">false</span>;</span><br><span class="line">		isFourfoldDay = <span class="keyword">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">setDoubleDay</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		isCommonDay = <span class="keyword">false</span>;</span><br><span class="line">		isDoubleDay = <span class="keyword">true</span>;</span><br><span class="line">		isTripleDay = <span class="keyword">false</span>;</span><br><span class="line">		isFourfoldDay = <span class="keyword">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">setTipleDay</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		isCommonDay = <span class="keyword">false</span>;</span><br><span class="line">		isDoubleDay = <span class="keyword">false</span>;</span><br><span class="line">		isTripleDay = <span class="keyword">true</span>;</span><br><span class="line">		isFourfoldDay = <span class="keyword">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">setFourfoldDay</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		isCommonDay = <span class="keyword">false</span>;</span><br><span class="line">		isDoubleDay = <span class="keyword">false</span>;</span><br><span class="line">		isTripleDay = <span class="keyword">false</span>;</span><br><span class="line">		isFourfoldDay = <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ShopSystem 中使用手机号标识一个用户，存储其当前积分，mStrategy 是当前正在使用的积分计算策略，为了模拟不同的日期，使用了 4 个标志变量  isCommonDay， isDoubleDay，  isTripleDay， isFourfoldDay 分别标识是否需要使用 1 倍，2 倍，3 倍，4 倍的积分策略</p>
+<p>测试代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">ShopSystem system = <span class="keyword">new</span> ShopSystem();</span><br><span class="line">		</span><br><span class="line"><span class="comment">// common day</span></span><br><span class="line">system.setCommonDay();</span><br><span class="line">system.incIntegral(<span class="string">"13212765437"</span>, <span class="number">200</span>);</span><br><span class="line">System.out.println(<span class="string">"13212765437:"</span> + system.getItegralByTel(<span class="string">"13212765437"</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">// 清明节</span></span><br><span class="line">system.setDoubleDay();</span><br><span class="line">system.incIntegral(<span class="string">"13212765437"</span>, <span class="number">200</span>);</span><br><span class="line">System.out.println(<span class="string">"13212765437:"</span> + system.getItegralByTel(<span class="string">"13212765437"</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">// 元旦，劳动节，端午节，中秋节</span></span><br><span class="line">system.setTipleDay();</span><br><span class="line">system.incIntegral(<span class="string">"13212765437"</span>, <span class="number">200</span>);</span><br><span class="line">System.out.println(<span class="string">"13212765437:"</span> + system.getItegralByTel(<span class="string">"13212765437"</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">// 国庆节 春节</span></span><br><span class="line">system.setFourfoldDay();</span><br><span class="line">system.incIntegral(<span class="string">"13212765437"</span>, <span class="number">200</span>);</span><br><span class="line">System.out.println(<span class="string">"13212765437:"</span> + system.getItegralByTel(<span class="string">"13212765437"</span>));</span><br></pre></td></tr></table></figure>
+
+<p>测试代码运行结果：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">13212765437</span>:<span class="number">200</span></span><br><span class="line"><span class="number">13212765437</span>:<span class="number">600</span></span><br><span class="line"><span class="number">13212765437</span>:<span class="number">1200</span></span><br><span class="line"><span class="number">13212765437</span>:<span class="number">2000</span></span><br></pre></td></tr></table></figure>
+
+<p>程序运行结果表明，在不同节假日购买完商品后，相同价格的商品增加的积分是不一样的。</p>
+<h2 id="策略模式在-Android-中的使用"><a href="#策略模式在-Android-中的使用" class="headerlink" title="策略模式在 Android 中的使用"></a>策略模式在 Android 中的使用</h2><p>策略模式在 Android 中的使用，最常见的莫过于 ListView 中的 Adapter 了。为了让 ListView 正常显示列表内容，必须给 ListView设置一个 Adapter。是不是感觉 ListView 有点像策略模式中的环境角色，Adapter 有点像抽象策略角色，ok，画一个 UML 看下就明白了。</p>
+<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/strategy_adapter.png" alt=""></p>
+<p>可以发现，ListView 持有一个 ListAdapter 实例 mAdapter，ListAdapter 为一个接口，在运行期间 ListView 实例可以使用 setAdapter 对 mAdapter 引用的实例进行修改，一下子就明白了，这是策略模式的典型应用。</p>
+<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2><p>在进行和算法相关的内容时，我们会觉得重心是实现算法，但在策略模式中，我们的重心不是实现算法，而是如何有效的组织，调用这些算法，以便让程序更加灵活，具有更好的扩展性和灵活性</p>
+<p>策略模式中，所有的具体策略是平等的，策略的平等性可以让程序在运行时根据条件或者状态进行策略的切换</p>
+<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><ul>
+<li>解耦算法的实现和使用，便于对算法进行扩展和修改，系统具有良好的灵活性</li>
+<li>程序结构清晰明了，消除了代码中的选择语句</li>
+</ul>
+<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><ul>
+<li>使用者需要知道所有已经存在的策略</li>
+<li>如果策略较多，会存在很多策略类，增加了系统开销</li>
+</ul>
+<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><ul>
+<li>同一类型的问题有多重解决方式，仅仅是具体行为差异，系统运行时可以动态选择不同的策略</li>
+<li>需要安全地封装同一类对象，调用者不需要知道策略的具体过程</li>
+<li>一个类有多个子类，并且在调用的时候用 if 或 switch 判断</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>策略模式将多种不同场景中均需要使用的逻辑进行了抽象，不同场景中逻辑的实现不一样，但是应对的需求是一样的。这样的设计使程序结构更加清晰明了，便于对程序进行维护和扩展。如果程序中大量存在根据不同条件进行相同功能逻辑的代码，就需要好好想一下，同样的功能逻辑能否抽象成策略模式。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Android 设计模式（六）-策略模式 <a href="https://blog.csdn.net/qq_25806863/article/details/68623134" target="_blank" rel="noopener">https://blog.csdn.net/qq_25806863/article/details/68623134</a></li>
+<li>Android 设计模式之策略模式 <a href="https://www.jianshu.com/p/5053d7ed181e" target="_blank" rel="noopener">https://www.jianshu.com/p/5053d7ed181e</a></li>
+<li></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/go/2020/05/05/design-pattern-template/" rel="next" title="模板模式">
+                <i class="fa fa-chevron-left"></i> 模板模式
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/go/2020/05/05/design-pattern-resp-chain/" rel="prev" title="责任链模式">
+                责任链模式 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rockstore</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/go/archives%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/go/categories/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/go/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#策略模式"><span class="nav-number">1.</span> <span class="nav-text">策略模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#定义"><span class="nav-number">1.1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UML"><span class="nav-number">1.2.</span> <span class="nav-text">UML</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#简单-Demo-实现"><span class="nav-number">1.3.</span> <span class="nav-text">简单 Demo 实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#场景使用"><span class="nav-number">1.4.</span> <span class="nav-text">场景使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#策略模式在-Android-中的使用"><span class="nav-number">1.5.</span> <span class="nav-text">策略模式在 Android 中的使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#思考"><span class="nav-number">1.6.</span> <span class="nav-text">思考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优缺点"><span class="nav-number">1.7.</span> <span class="nav-text">优缺点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#优点"><span class="nav-number">1.7.1.</span> <span class="nav-text">优点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#缺点"><span class="nav-number">1.7.2.</span> <span class="nav-text">缺点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#适用场景"><span class="nav-number">1.8.</span> <span class="nav-text">适用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">1.9.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">1.10.</span> <span class="nav-text">参考文献</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rockstore</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/go/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
