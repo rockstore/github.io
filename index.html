@@ -248,6 +248,394 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/06/android-framework-battery-cal/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/06/android-framework-battery-cal/" itemprop="url">Android 耗电计算简析</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-06T00:54:59+08:00">
+                2020-05-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android-framework/" itemprop="url" rel="index">
+                    <span itemprop="name">android framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android-framework/%E8%80%97%E7%94%B5%E5%88%86%E6%9E%90/" itemprop="url" rel="index">
+                    <span itemprop="name">耗电分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>前面已经分析了耗电统计服务 BSS 的启动流程，并简要说明了 BSS 是如何统计组件耗时的，本文将会以相机耗电统计的计算详细分析一下组件耗电的计算。</p>
+<h2 id="计算原理"><a href="#计算原理" class="headerlink" title="计算原理"></a>计算原理</h2><p>在分析 BSS 启动时，提到过新建 BatteryStatsService 实例，真正实现 BatteryStatsService 功能的是 BatteryStatsImpl 实例，看下 BatteryStatsImpl 实例 的构造函数</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">BatteryStatsImpl</span><span class="params">(Clocks clocks, File systemDir, Handler handler,</span></span></span><br><span class="line"><span class="function"><span class="params">            PlatformIdleStateCallback cb,</span></span></span><br><span class="line"><span class="function"><span class="params">            UserInfoProvider userInfoProvider)</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    mCameraOnTimer = <span class="keyword">new</span> StopwatchTimer(mClocks, <span class="keyword">null</span>, -<span class="number">13</span>, <span class="keyword">null</span>, mOnBatteryTimeBase);</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 BatteryStatsImpl 构造函数中，新建了一个 StopwatchTimer 实例 mCameraOnTimer，先不用关注 StopwatchTimer 的原理，只需要明白 mCameraOnTimer 的主要功能是计算相机的工作时长，本文的主要目的是带着大家一起了解 Android 是如何计算组件耗时。</p>
+<p>前面说过，BSS 并不主动统计耗电时长，仅仅是在有和耗电时间变化相关的事件发生时，调用 BSS 的 noteXXX 方法，进行耗电时间的统计，相机的耗电时间计算也是这样。</p>
+<h3 id="打开相机"><a href="#打开相机" class="headerlink" title="打开相机"></a>打开相机</h3><p>当某个应用打开相机时，BSS 会调用函数 noteStartCamera</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteStartCamera</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    enforceCallingPermission();</span><br><span class="line">    <span class="keyword">if</span> (DBG) Slog.d(TAG, <span class="string">"begin noteStartCamera"</span>);</span><br><span class="line">    <span class="keyword">synchronized</span> (mStats) &#123;</span><br><span class="line">        mStats.noteCameraOnLocked(uid);</span><br><span class="line">        StatsLog.write_non_chained(StatsLog.CAMERA_STATE_CHANGED, uid, <span class="keyword">null</span>,</span><br><span class="line">                StatsLog.CAMERA_STATE_CHANGED__STATE__ON);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (DBG) Slog.d(TAG, <span class="string">"end noteStartCamera"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 BSS 里的 mStats 是 BatteryStatsImpl 实例，可以看到，接下来会调用 BatteryStatsImpl 的 noteCameraOnLocked 函数，这里的参数 uid 表示某一个应用。继续跟踪</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteCameraOnLocked</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 将 isolated 应用的耗电信息映射到实际的应用</span></span><br><span class="line">    uid = mapUid(uid);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> elapsedRealtime = mClocks.elapsedRealtime();</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> uptime = mClocks.uptimeMillis();</span><br><span class="line">    <span class="keyword">if</span> (mCameraOnNesting++ == <span class="number">0</span>) &#123;</span><br><span class="line">		<span class="comment">// 相机第一次被打开</span></span><br><span class="line">        mHistoryCur.states2 |= HistoryItem.STATE2_CAMERA_FLAG;</span><br><span class="line">        <span class="keyword">if</span> (DEBUG_HISTORY) Slog.v(TAG, <span class="string">"Camera on to: "</span></span><br><span class="line">                + Integer.toHexString(mHistoryCur.states2));</span><br><span class="line">        addHistoryRecordLocked(elapsedRealtime, uptime);</span><br><span class="line">		<span class="comment">// 相机耗电的总统计入口</span></span><br><span class="line">        mCameraOnTimer.startRunningLocked(elapsedRealtime);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*-----------------------------分割线--------------------------------*/</span></span><br><span class="line">    <span class="comment">// 根据应用进行统计</span></span><br><span class="line">    getUidStatsLocked(uid).noteCameraTurnedOnLocked(elapsedRealtime);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>理解 mapUid 方法需要我们明白 isolated process 这一概念，isolated process 进程在运行时会在应用下新建一个特殊的进程，且 isolated process 拥有和应用不一样的 uid，为了统计应用下 isolated process 和其他进程，需要将 isolated process 进程的 uid 映射到应用的 uid，这样才能准确统计某一个应用的耗电。</p>
+<p>可以看到函数 noteCameraOnLocked 里有一条注视分割线，这条分割线是我自己添加的，分割线前面是统计相机的耗电时长，分割线后面是按照应用统计相机耗电时长。</p>
+<p>这里还有一个 int 类型参数 mCameraOnNesting ，这个变量的作用记录相机执行打开操作的次数，其实很好理解，如果是第一次执行打开操作，对于统计相机耗电时长来说，则需要开始执行统计，如果不是第一次执行打开，则不需要再开始统计。如果是第一次执行打开操作，则需要将此次打开操作添加到历史记录中，并执行 mCameraOnTimer.startRunningLocked 开始进行时间计算。</p>
+<p>执行完相机耗电时长统计后，接下来就是统计每个应用使用相机的时长。先看下 getUidStatsLocked 这个函数</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Uid <span class="title">getUidStatsLocked</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    Uid u = mUidStats.get(uid);</span><br><span class="line">    <span class="keyword">if</span> (u == <span class="keyword">null</span>) &#123;</span><br><span class="line">        u = <span class="keyword">new</span> Uid(<span class="keyword">this</span>, uid);</span><br><span class="line">        mUidStats.put(uid, u);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> u;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mUidStats 保存的是 uid -&gt; Uid 映射，uid 是 int 类型的数值，标识一个应用，Uid 记录每一个应用的耗电信息，这样一解释，getUidStatsLocked(uid).noteCameraTurnedOnLocked 其实就很好理解了，关注一下 Uid 的 noteCameraTurnedOnLocked 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteCameraTurnedOnLocked</span><span class="params">(<span class="keyword">long</span> elapsedRealtimeMs)</span> </span>&#123;</span><br><span class="line">    createCameraTurnedOnTimerLocked().startRunningLocked(elapsedRealtimeMs);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再继续跟踪 createCameraTurnedOnTimerLocked 方法，看它究竟返回的是什么对象</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> StopwatchTimer <span class="title">createCameraTurnedOnTimerLocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mCameraTurnedOnTimer == <span class="keyword">null</span>) &#123;</span><br><span class="line">        mCameraTurnedOnTimer = <span class="keyword">new</span> StopwatchTimer(mBsi.mClocks, Uid.<span class="keyword">this</span>, CAMERA_TURNED_ON,</span><br><span class="line">                mBsi.mCameraTurnedOnTimers, mBsi.mOnBatteryTimeBase);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> mCameraTurnedOnTimer;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现， Uid 内部也是用的 StopwatchTimer 实例记录相机的耗电时长。</p>
+<p>到这里，我们应该就有一个大致的印象了，BSS 使用 StopwatchTimer 记录相机的时长，BatteryStatsImpl 的 mCameraOnTimer 用于记录相机的总时长， Uid 内部的 mCameraTurnedOnTimer 用于记录每个应用的相机耗电时长。突然感觉一下子豁然开朗！！！！！</p>
+<h3 id="关闭相机"><a href="#关闭相机" class="headerlink" title="关闭相机"></a>关闭相机</h3><p>有打开相机，就有关闭相机，相机关闭时，如何更新相机的耗电时长呢？相机关闭时，会调用 BSS 的 noteStopCamera 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteStopCamera</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    enforceCallingPermission();</span><br><span class="line">    <span class="keyword">synchronized</span> (mStats) &#123;</span><br><span class="line">        mStats.noteCameraOffLocked(uid);</span><br><span class="line">        StatsLog.write_non_chained(StatsLog.CAMERA_STATE_CHANGED, uid, <span class="keyword">null</span>,</span><br><span class="line">                StatsLog.CAMERA_STATE_CHANGED__STATE__OFF);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 uid 是应用的 uid。接下来会调用 BatteryStatsImpl 的 noteCameraOffLocked 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteCameraOffLocked</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mCameraOnNesting == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    uid = mapUid(uid);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> elapsedRealtime = mClocks.elapsedRealtime();</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> uptime = mClocks.uptimeMillis();</span><br><span class="line">    <span class="keyword">if</span> (--mCameraOnNesting == <span class="number">0</span>) &#123;</span><br><span class="line">        mHistoryCur.states2 &amp;= ~HistoryItem.STATE2_CAMERA_FLAG;</span><br><span class="line">        <span class="keyword">if</span> (DEBUG_HISTORY) Slog.v(TAG, <span class="string">"Camera off to: "</span></span><br><span class="line">                + Integer.toHexString(mHistoryCur.states2));</span><br><span class="line">        addHistoryRecordLocked(elapsedRealtime, uptime);</span><br><span class="line">        mCameraOnTimer.stopRunningLocked(elapsedRealtime);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*-----------------------------分割线--------------------------------*/</span></span><br><span class="line">    getUidStatsLocked(uid).noteCameraTurnedOffLocked(elapsedRealtime);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mCameraOnNesting 的作用可以参考在打开相机时的介绍。mCameraOnNesting == 0 表示相机已经关闭，故直接返回，接下来会通过 –mCameraOnNesting == 0 来判断此次关闭操作后，是否还有应用在使用相机，如果没有，则会保存此次记录，并停止计算相机耗电时长。这里也有一条分割线，分割线的含义和打开相机时的解释一致。后面的内容会在重置相机中进行分析。</p>
+<h3 id="重置相机"><a href="#重置相机" class="headerlink" title="重置相机"></a>重置相机</h3><p>为什么会有重置相机这一操作呢，其实很好理解，有这样的场景，多个应用都在使用相机，用户通过任务栏一次性将所有应用都杀死，那么所有应用都需要停止相机耗时统计。<br>和打开关闭相机一样，执行重置相机操作时，会调用 BSS 的 noteResetCamera 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteResetCamera</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    enforceCallingPermission();</span><br><span class="line">    <span class="keyword">synchronized</span> (mStats) &#123;</span><br><span class="line">        mStats.noteResetCameraLocked();</span><br><span class="line">        StatsLog.write_non_chained(StatsLog.CAMERA_STATE_CHANGED, -<span class="number">1</span>, <span class="keyword">null</span>,</span><br><span class="line">                StatsLog.CAMERA_STATE_CHANGED__STATE__RESET);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来会调用 BatteryStatsImpl 的 noteResetCameraLocked 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteResetCameraLocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mCameraOnNesting &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> elapsedRealtime = mClocks.elapsedRealtime();</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> uptime = mClocks.uptimeMillis();</span><br><span class="line">        mCameraOnNesting = <span class="number">0</span>;</span><br><span class="line">        mHistoryCur.states2 &amp;= ~HistoryItem.STATE2_CAMERA_FLAG;</span><br><span class="line">        <span class="keyword">if</span> (DEBUG_HISTORY) Slog.v(TAG, <span class="string">"Camera off to: "</span></span><br><span class="line">                + Integer.toHexString(mHistoryCur.states2));</span><br><span class="line">        addHistoryRecordLocked(elapsedRealtime, uptime);</span><br><span class="line">        mCameraOnTimer.stopAllRunningLocked(elapsedRealtime);</span><br><span class="line">        <span class="comment">/*-----------------------------分割线--------------------------------*/</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;mUidStats.size(); i++) &#123;</span><br><span class="line">            BatteryStatsImpl.Uid uid = mUidStats.valueAt(i);</span><br><span class="line">            uid.noteResetCameraLocked(elapsedRealtime);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mCameraOnNesting &gt; 0 表示相机处于被打开的状态，重置操作直接将 mCameraOnNesting 设置为 0，然后保存此次记录，并停止相机耗时统计。这里使用的是 stopAllRunningLocked 函数，和前面的 stopRunningLocked 有什么区别呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">stopAllRunningLocked</span><span class="params">(<span class="keyword">long</span> elapsedRealtimeMs)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mNesting &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        mNesting = <span class="number">1</span>;</span><br><span class="line">        stopRunningLocked(elapsedRealtimeMs);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>stopAllRunningLocked 最终也是调用 stopRunningLocked 方法，<br>mNesting 是 StopwatchTimer 内部的 int 类型参数，和 mCameraOnNesting 是相同的含义，不同的是 mCameraOnNesting 针对的相机这一组件， mNesting 针对的所有使用 StopwatchTimer 的实例。可能有一个疑问，执行 reset 操作时，mCameraOnNesting 被设置为 0，为什么执行 stopAllRunningLocked 后 mNesting 被设置为 1 呢？其实也很好理解，可以参考关闭相机时的分析，如果将 mNesting 设置为 0， 这stopRunningLocked 会直接返回，所以这里为了防止 stopRunningLocked 内部逻辑无法执行，就先将 mNesting 设置为 1 了。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文总结了相机计算耗电时长的逻辑，目的是让大家熟悉 BSS 是如何计算组件耗电时长的，这里要注意的时，进行耗电时长统计时，会按照组件和应用区分，比如对于本文提到的相机耗电时长，BSS 会记录相机耗电的总时长，也会按照应用统计每个应用使用相机的时长，这种模式会贯穿 BSS。至于本文中的 startXXX 和 stopXXX 方法，会在下篇分析 BSS 中的 Timer 体系中进行分析。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/06/android-framework-battery/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/06/android-framework-battery/" itemprop="url">耗电统计服务启动</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-06T00:44:50+08:00">
+                2020-05-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android-framework/" itemprop="url" rel="index">
+                    <span itemprop="name">android framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android-framework/%E8%80%97%E7%94%B5%E5%88%86%E6%9E%90/" itemprop="url" rel="index">
+                    <span itemprop="name">耗电分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>Android 的耗电计算也是一个系统服务，本文包括以下内容：</p>
+<ul>
+<li>耗电统计服务（BatteryStatsService，简称 BSS）的启动流程</li>
+<li>耗电计算的简要流程</li>
+</ul>
+<p>经过以上两部分的分析，可以帮助我们对 Android 的耗电计算有一个框架性的认识，后面的文章会对这种框架性的认识进行细节上的丰富。</p>
+<h2 id="Android-耗电统计概览"><a href="#Android-耗电统计概览" class="headerlink" title="Android 耗电统计概览"></a>Android 耗电统计概览</h2><h2 id="BSS-的启动"><a href="#BSS-的启动" class="headerlink" title="BSS 的启动"></a>BSS 的启动</h2><p>BatteryStatsService.java 文件位于 </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">platform_frameworks_base/services/core/java/com/android/server/am/</span><br></pre></td></tr></table></figure>
+
+<p>BSS 的启动逻辑位于 ActivityManagerService （AMS）的构造函数中</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 新建 BatteryStatsService 实例</span></span><br><span class="line">mBatteryStatsService = <span class="keyword">new</span> BatteryStatsService(systemContext, systemDir, mHandler);</span><br><span class="line"><span class="comment">// 读取已经保存的耗电信息</span></span><br><span class="line">mBatteryStatsService.getActiveStatistics().readLocked();</span><br><span class="line"><span class="comment">// 写入耗电信息</span></span><br><span class="line">mBatteryStatsService.scheduleWriteToDisk();</span><br><span class="line">mOnBattery = DEBUG_POWER ? <span class="keyword">true</span></span><br><span class="line">                : mBatteryStatsService.getActiveStatistics().getIsOnBattery();</span><br><span class="line"><span class="comment">// 设置耗电信息更新的回调</span></span><br><span class="line">mBatteryStatsService.getActiveStatistics().setCallback(<span class="keyword">this</span>);</span><br></pre></td></tr></table></figure>
+<p>这里有一个点可能会被忽略，AMS 的构造函数在新建 AMS 的对象（一句废话），此时正是系统启动的过程，记住这一点。BSS 的启动逻辑做了四个操作：</p>
+<ul>
+<li>新建 BatteryStatusService 实例</li>
+<li>读取已经保存的耗电信息</li>
+<li>写入耗电信息</li>
+<li>设置耗电更新回调</li>
+</ul>
+<p>接下来分别对这四个操作进行分析</p>
+<h3 id="新建-BatteryStatsService-实例"><a href="#新建-BatteryStatsService-实例" class="headerlink" title="新建 BatteryStatsService 实例"></a>新建 BatteryStatsService 实例</h3><p>虽然仅仅是新建了 BatteryStatsService 实例，但是这条语句蕴含的内容却很多</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">BatteryStatsService(Context context, File systemDir, Handler handler) &#123;</span><br><span class="line">    <span class="comment">// BatteryStatsImpl expects the ActivityManagerService handler, so pass that one through.</span></span><br><span class="line">    mContext = context;</span><br><span class="line">    mUserManagerUserInfoProvider = <span class="keyword">new</span> BatteryStatsImpl.UserInfoProvider() &#123;</span><br><span class="line">        <span class="keyword">private</span> UserManagerInternal umi;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">int</span>[] getUserIds() &#123;</span><br><span class="line">            <span class="keyword">if</span> (umi == <span class="keyword">null</span>) &#123;</span><br><span class="line">                umi = LocalServices.getService(UserManagerInternal<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> (umi != <span class="keyword">null</span>) ? umi.getUserIds() : <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    mStats = <span class="keyword">new</span> BatteryStatsImpl(systemDir, handler, <span class="keyword">this</span>, mUserManagerUserInfoProvider);</span><br><span class="line">	<span class="comment">// mWorker 内部统计收集电池信息</span></span><br><span class="line">    ......</span><br><span class="line">    mStats.setPowerProfileLocked(<span class="keyword">new</span> PowerProfile(context));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mUserManagerUserInfoProvider 类的作用是获取系统上应用的 uid 集合，获取 uid 集合的目的是为了统计不同应用的耗电情况，后面在分析不同应用耗电时会有介绍。BatteryStatsService 的作用是进行耗电统计，但是真正实现这些功能的类是 BatteryStatsImpl 类。最后一条语句需要上下代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mStats.setPowerProfileLocked(<span class="keyword">new</span> PowerProfile(context));</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">PowerProfile</span><span class="params">(Context context, <span class="keyword">boolean</span> forTest)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Read the XML file for the given profile (normally only one per device)</span></span><br><span class="line">    <span class="keyword">synchronized</span> (sLock) &#123;</span><br><span class="line">        <span class="keyword">if</span> (sPowerItemMap.size() == <span class="number">0</span> &amp;&amp; sPowerArrayMap.size() == <span class="number">0</span>) &#123;</span><br><span class="line">            readPowerValuesFromXml(context, forTest);</span><br><span class="line">        &#125;</span><br><span class="line">        initCpuClusters();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调用 setPowerProfileLocked ，最终通过 readPowerValuesFromXml 获取手机不同组件的耗电信息。 readPowerValuesFromXml 读取的是 frameworks/core/res/res/xml/power_profile.xml 文件里的配置信息，可以看下配置信息的格式</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">device</span> <span class="attr">name</span>=<span class="string">"Android"</span>&gt;</span></span><br><span class="line">  ......</span><br><span class="line">  <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"wifi.on"</span>&gt;</span>0.1<span class="tag">&lt;/<span class="name">item</span>&gt;</span>  <span class="comment">&lt;!-- ~3mA --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"wifi.active"</span>&gt;</span>0.1<span class="tag">&lt;/<span class="name">item</span>&gt;</span>  <span class="comment">&lt;!-- WIFI data transfer, ~200mA --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"wifi.scan"</span>&gt;</span>0.1<span class="tag">&lt;/<span class="name">item</span>&gt;</span>  <span class="comment">&lt;!-- WIFI network scanning, ~100mA --&gt;</span></span><br><span class="line">  .......</span><br><span class="line"><span class="tag">&lt;/<span class="name">device</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>如上所示 power_profile.xml 里组件的耗电是电流信息，为什么会是这样呢？对于手机来说，电压是固定的，根据功率计算公式</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">P = U * I</span><br><span class="line">W = P * t</span><br></pre></td></tr></table></figure>
+<p>只需要知道电流和时间，就可以计算组件的耗电了，由于组件的电流也以配置文件的方式固定下来，所以<strong>通常来说，统计组件耗电就是统计组件在不同状态的运行时间。</strong></p>
+<p>这里还有一个比较重要的位置，SystemService 在启动完 AMS 之后，会调用 AMS 的 initPowerManagement 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">startBootstrapServices</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    mActivityManagerService.initPowerManagement();</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>继续跟踪一下 AMS 的 initPowerManagement 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">initPowerManagement</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    mBatteryStatsService.initPowerManagement();</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看下 BSS 内部是如何执行 initPowerManagement </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">initPowerManagement</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> PowerManagerInternal powerMgr = LocalServices.getService(PowerManagerInternal<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">    powerMgr.registerLowPowerModeObserver(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">synchronized</span> (mStats) &#123;</span><br><span class="line">        mStats.notePowerSaveModeLocked(</span><br><span class="line">                powerMgr.getLowPowerState(ServiceType.BATTERY_STATS)</span><br><span class="line">                        .batterySaverEnabled);</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行 initPowerManagement 首先获取了 PowerManager 服务，然后注册了低电模式的监听器，执行 mStats.notePowerSaveModeLocked 开始统计低电耗时统计。</p>
+<h3 id="读取已经保存的耗电信息"><a href="#读取已经保存的耗电信息" class="headerlink" title="读取已经保存的耗电信息"></a>读取已经保存的耗电信息</h3><p>耗电服务 BatteryStatusService 在记录系统组件耗电的同时，会将这些信息保存在文件 /data/system/batterystats.bin 中，mBatteryStatsService.getActiveStatistics() 返回 BatteryStatsImpl 实例，mBatteryStatsService.getActiveStatistics().readLocked 调用 BatteryStatsImpl 的 readLocked() 方法。 readLocked 方法主要读取了系统存储的每天耗电信息以及其他的耗电统计信息，可以自己去分析以下。</p>
+<h3 id="写入耗电信息"><a href="#写入耗电信息" class="headerlink" title="写入耗电信息"></a>写入耗电信息</h3><p>写入耗电信息 的作用是对当前系统的耗电统计进行记录，写入到日志文件中。</p>
+<h3 id="设置耗电更新回调"><a href="#设置耗电更新回调" class="headerlink" title="设置耗电更新回调"></a>设置耗电更新回调</h3><p>耗电回调 BatteryCallback 接口如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BatteryCallback</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 需要更新 CPU 耗电信息</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batteryNeedsCpuUpdate</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="comment">// 手机在供电在电源供电和电池供电之间发生了变化，onBattery 表示是否电池供电</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batteryPowerChanged</span><span class="params">(<span class="keyword">boolean</span> onBattery)</span></span>;</span><br><span class="line">    <span class="comment">// 手机在充电和放电之间发生了变化，intent 中根据 action 信息标示充电（android.os.action.CHARGING）和放电（android.os.action.DISCHARGING）状态</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batterySendBroadcast</span><span class="params">(Intent intent)</span></span>;</span><br><span class="line">    <span class="comment">// 电池统计信息被重制</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batteryStatsReset</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="服务发布"><a href="#服务发布" class="headerlink" title="服务发布"></a>服务发布</h3><p>BSS 是一个系统服务，需要将服务发布出去以便向外部暴露相关的接口，BSS 是如何将自己发布出去的呢？ ActivityManagerService 在启动的时候，会调用 onStart() 方法，最终会调用 ActivityManagerService 的 start 方法， start 方法内部会进行 BSS 的服务发布</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">private void start() &#123;</span><br><span class="line">    ......</span><br><span class="line">    mBatteryStatsService.publish();</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>继续跟踪 mBatteryStatsService.publish() 代码，最终看到了如下的位置，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public void publish() &#123;</span><br><span class="line">    LocalServices.addService(BatteryStatsInternal.class, new LocalService());</span><br><span class="line">    ServiceManager.addService(BatteryStats.SERVICE_NAME, asBinder());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>LocalServices 的作用有点类似 ServiceManager 的功能，不通的是 LocalServices 内部管理的服务不是 Binder 对象，且其保存的服务是为本进程内部使用的。这里在进行服务发布的时候，先在 LocalServices 执行了 addService 方法以便本进程使用 BSS，接着在 ServiceManager 执行了 addService 方法以便其他进程使用 BSS。</p>
+<h2 id="耗电计算的简要流程"><a href="#耗电计算的简要流程" class="headerlink" title="耗电计算的简要流程"></a>耗电计算的简要流程</h2><p>前面分析了 BSS 的启动和 BSS 的发布，但是有一个疑问一直存在，分析 BSS 启动的时候，仅仅出现了 BSS 实例的新建和相关配置信息读取，分析 BSS 的发布也仅仅是一个发布的操作，BSS 究竟是如何进行耗电统计的呢？<br>BSS 并不主动进行耗电统计，而是被动更新系统组件的耗电时间。前面以及说过，BSS 内部耗电的最终计算实际是 BatteryStatsImpl 实例完成的，BSS 在收到和耗电相关的事件或者外部主动更新耗电信息时，会调用 BSS 的 noteXXX 方法，最终会调用 BatteryStatsImpl 内的方法，更新耗电组件的耗电时间信息。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文概述了 Android 的耗电启动并简单说明了 BSS 的耗电计算流程，下篇文章将会以相机的耗电计算为例，分析 Android 的耗电计算流程。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/06/java-anno/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1941,440 +2329,11 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-proxy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="rockstore">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/go/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Rock">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/go/2020/05/05/design-pattern-proxy/" itemprop="url">代理模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T09:42:38+08:00">
-                2020-05-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="代理"><a href="#代理" class="headerlink" title="代理"></a>代理</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>代理模式是一种结构型模式。使用代理模式可以让代理操作真实对象，屏蔽真实对象的执行细节，可以在真实对象执行具体操作之前做一些”额外”操作。</p>
-<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>为对象提供一种代理以便控制这个对象的访问。</p>
-<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="http://p0.qhimg.com/t0114b01ae5ac94bf7e.png" alt=""></p>
-<p>ReadObject 和 ProxyObject 都继承实现了 AbstractObject ( AbstractObject 可以是类，也可以是接口 )，ProxyObject 对象保存了 RealObject 对象的实例。Client 使用 RealObject 对象调用 operation 方法时，使用 ProxyObject 实例进行代理调用。 </p>
-<h2 id="静态代理"><a href="#静态代理" class="headerlink" title="静态代理"></a>静态代理</h2><p>静态代理是指在程序运行之前，代理类已经确定，静态代理示例如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RealObject</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"RealObject executes operation"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProxyObject</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> RealObject realObject;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ProxyObject</span><span class="params">(RealObject object)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		realObject = object;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ProxyObject executes before RealObject operation"</span>);</span><br><span class="line">		realObject.operation();</span><br><span class="line">		System.out.println(<span class="string">"ProxyObject executes after RealObject operation"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">    RealObject realObject = <span class="keyword">new</span> RealObject();</span><br><span class="line">    ProxyObject proxyObject = <span class="keyword">new</span> ProxyObject(realObject);</span><br><span class="line">    proxyObject.operation();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>程序运行结果如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ProxyObject executes before RealObject operation</span><br><span class="line">RealObject executes operation</span><br><span class="line">ProxyObject executes after RealObject operation</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="动态代理"><a href="#动态代理" class="headerlink" title="动态代理"></a>动态代理</h2><p>静态代理的代理类在编译时已经生成，动态代理比静态代理思想更近了一步，动态代理的代理类在程序运行时创建。可以先看一代码实现，再分析其中的原理。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RealObject</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"RealObject executes operation"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>使用动态代理，需要定义自己的 InvocationHandler 实现</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyProxyHandler</span> <span class="keyword">implements</span> <span class="title">InvocationHandler</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> Object mObject;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyProxyHandler</span><span class="params">(Object obj)</span> </span>&#123;</span><br><span class="line">        mObject = obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    	System.out.println(<span class="string">"---before invoke---"</span>);</span><br><span class="line">        Object object = method.invoke(mObject, args);</span><br><span class="line">        System.out.println(<span class="string">"---after invoke---"</span>);</span><br><span class="line">        <span class="keyword">return</span> object;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>最后看下该如何使用动态代理</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">    ClassLoader classLoader = IObject<span class="class">.<span class="keyword">class</span>.<span class="title">getClassLoader</span>()</span>;</span><br><span class="line">    MyProxyHandler handler = <span class="keyword">new</span> MyProxyHandler(<span class="keyword">new</span> RealObject());</span><br><span class="line">    IObject proxyObject = (IObject) Proxy.newProxyInstance(classLoader, <span class="keyword">new</span> Class [] &#123;IObject<span class="class">.<span class="keyword">class</span>&#125;, <span class="title">handler</span>)</span>;</span><br><span class="line">    proxyObject.operation();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>程序运行结果如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">---before invoke---</span><br><span class="line">RealObject executes operation</span><br><span class="line">---after invoke---</span><br></pre></td></tr></table></figure>
-
-<p>到这里可能会有疑惑， Proxy.newProxyInstance 究竟做了什么，如何动态生成代理类，代理调用时如何转发到 MyProxyHandler 的 invoke 方法呢？带着这些疑问，深入 Proxy.newProxyInstance 函数看看。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Object <span class="title">newProxyInstance</span><span class="params">(ClassLoader loader,</span></span></span><br><span class="line"><span class="function"><span class="params">                                          Class&lt;?&gt;[] interfaces,</span></span></span><br><span class="line"><span class="function"><span class="params">                                          InvocationHandler h)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> IllegalArgumentException</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        ......</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> Class&lt;?&gt;[] intfs = interfaces.clone();</span><br><span class="line">        ......</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 获取代理类的 Class</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        Class&lt;?&gt; cl = getProxyClass0(loader, intfs);</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 调用代理类的构造函数（参数为 InvocationHandler 实例）新建代理类实例，并返回实例</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ......</span><br><span class="line">            <span class="keyword">final</span> Constructor&lt;?&gt; cons = cl.getConstructor(constructorParams);</span><br><span class="line">            <span class="keyword">final</span> InvocationHandler ih = h;</span><br><span class="line">            ...... </span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> cons.newInstance(<span class="keyword">new</span> Object[]&#123;h&#125;);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IllegalAccessException|InstantiationException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> InternalError(e.toString(), e);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvocationTargetException e) &#123;</span><br><span class="line">            ......</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchMethodException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> InternalError(e.toString(), e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>constructorParams 的声明如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Class&lt;?&gt;[] constructorParams = &#123; InvocationHandler<span class="class">.<span class="keyword">class</span> &#125;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>newProxyInstance 的逻辑比较简单，两个步骤：根据传入的接口 Class 数组构造代理 Class；调用代理 Class 的构造函数新建代理类实例。先看下第一步的 getProxyClass0 函数：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Class&lt;?&gt; getProxyClass0(ClassLoader loader,</span><br><span class="line">                                           Class&lt;?&gt;... interfaces) &#123;</span><br><span class="line">        <span class="keyword">if</span> (interfaces.length &gt; <span class="number">65535</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"interface limit exceeded"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// If the proxy class defined by the given loader implementing</span></span><br><span class="line">        <span class="comment">// the given interfaces exists, this will simply return the cached copy;</span></span><br><span class="line">        <span class="comment">// otherwise, it will create the proxy class via the ProxyClassFactory</span></span><br><span class="line">        <span class="keyword">return</span> proxyClassCache.get(loader, interfaces);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>判断了传入的接口数量是否大于65535，</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> WeakCache&lt;ClassLoader, Class&lt;?&gt;[], Class&lt;?&gt;&gt;</span><br><span class="line">        proxyClassCache = <span class="keyword">new</span> WeakCache&lt;&gt;(<span class="keyword">new</span> KeyFactory(), <span class="keyword">new</span> ProxyClassFactory());</span><br></pre></td></tr></table></figure>
-
-<p>proxyClassCache 的类型为 WeakCache（不了解的同学可以先了解一下）， proxyClassCache 调用 get 函数，如果缓存里有需要的 Class 直接返回，否则调用 ProxyClassFactory 的 apply 方法新建 Class 并放在缓存中。跟踪下 ProxyClassFactory 的 apply 函数。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> Class&lt;?&gt; apply(ClassLoader loader, Class&lt;?&gt;[] interfaces) &#123;</span><br><span class="line">            ......</span><br><span class="line">            String proxyPkg = <span class="keyword">null</span>;     <span class="comment">// package to define proxy class in</span></span><br><span class="line">            <span class="keyword">int</span> accessFlags = Modifier.PUBLIC | Modifier.FINAL;</span><br><span class="line">            ......</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (proxyPkg == <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="comment">// if no non-public proxy interfaces, use com.sun.proxy package</span></span><br><span class="line">                proxyPkg = ReflectUtil.PROXY_PACKAGE + <span class="string">"."</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * Choose a name for the proxy class to generate.</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">long</span> num = nextUniqueNumber.getAndIncrement();</span><br><span class="line">            String proxyName = proxyPkg + proxyClassNamePrefix + num;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * Generate the specified proxy class.</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">byte</span>[] proxyClassFile = ProxyGenerator.generateProxyClass(</span><br><span class="line">                proxyName, interfaces, accessFlags);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> defineClass0(loader, proxyName,</span><br><span class="line">                                    proxyClassFile, <span class="number">0</span>, proxyClassFile.length);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (ClassFormatError e) &#123;</span><br><span class="line">                <span class="comment">/*</span></span><br><span class="line"><span class="comment">                 * A ClassFormatError here means that (barring bugs in the</span></span><br><span class="line"><span class="comment">                 * proxy class generation code) there was some other</span></span><br><span class="line"><span class="comment">                 * invalid aspect of the arguments supplied to the proxy</span></span><br><span class="line"><span class="comment">                 * class creation (such as virtual machine limitations</span></span><br><span class="line"><span class="comment">                 * exceeded).</span></span><br><span class="line"><span class="comment">                 */</span></span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(e.toString());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面保留了核心代码，在生成 Class 时，最终调用了 ProxyGenerator.generateProxyClass 生成了字节码文件，然后调用 defineClass0 函数生成 Class 对象。本文不关注 ProxyGenerator.generateProxyClass 的实现原理，后面分析 ProxyGenerator.generateProxyClass 函数生成的 class 文件。最终默认生成的 class 文件包名为为： proxyPkg  ， proxyPkg 为 ReflectUtil.PROXY_PACKAGE( com.sun.proxy )，默认最终生成的类名为：$Proxy + num。最终生成的代理类是什么样的呢？</p>
-<p>能不能看到动态生成的代理类呢？在运行程序之前添加 sun.misc.ProxyGenerator.saveGeneratedFiles=true 配置，即可看到输出的 class 文件。看下上面示例代码生成的 class 文件：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> $<span class="title">Proxy0</span> <span class="keyword">extends</span> <span class="title">Proxy</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m1;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m3;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m2;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m0;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> $Proxy0(InvocationHandler var1) <span class="keyword">throws</span>  &#123;</span><br><span class="line">        <span class="keyword">super</span>(var1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object var1)</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> (Boolean)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m1, <span class="keyword">new</span> Object[]&#123;var1&#125;);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var3;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var4) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var4);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m3, (Object[])<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var2;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var3);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> String <span class="title">toString</span><span class="params">()</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> (String)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m2, (Object[])<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var2;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var3);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> (Integer)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m0, (Object[])<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var2;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var3);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            m1 = Class.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"equals"</span>, Class.forName(<span class="string">"java.lang.Object"</span>));</span><br><span class="line">            m3 = Class.forName(<span class="string">"com.rock.dynamic_proxy.IObject"</span>).getMethod(<span class="string">"operation"</span>);</span><br><span class="line">            m2 = Class.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"toString"</span>);</span><br><span class="line">            m0 = Class.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"hashCode"</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchMethodException var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoSuchMethodError(var2.getMessage());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoClassDefFoundError(var3.getMessage());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面的代码没有做任何删减，可以看到生成的代理类 class 文件实现了 IObject 接口，并实现了 operation 函数。构造函数传递了 InvocationHandler 实例。m3 是接口 IObject 定义的 operation 函数。生成代理 $Proxy0 的实例调用 operation 函数时会最终调用 InvocationHandler 实例的 operation 函数。</p>
-<h2 id="代理细分"><a href="#代理细分" class="headerlink" title="代理细分"></a>代理细分</h2><p>静态代理和动态代理是从代码的角度对代理进行区分，从适用场景可以对代理进行以下分类：</p>
-<ul>
-<li><p>远程代理</p>
-<p>为对象在不同的内存地址空间提供局部代理，使系统可以将 Server 部分隐藏，以便 Client 可以不必考虑 Server 的存在。</p>
-</li>
-<li><p>虚拟代理</p>
-<p>使用一个代理表示一个十分消耗资源的对象，只有在真正使用的时候才创建真是对象。</p>
-</li>
-<li><p>保护代理</p>
-<p>使用代理控制对原始对象的访问，该类型的代理常被用于被代理对象有不同的访问权限。</p>
-</li>
-<li><p>智能引用</p>
-<p>在访问原始对象时执行一些自己的附加操作，并对指向原始对象的引用计数。</p>
-</li>
-</ul>
-<h2 id="Android-中代理的使用"><a href="#Android-中代理的使用" class="headerlink" title="Android 中代理的使用"></a>Android 中代理的使用</h2><p>Android 的 Binder 机制经常被拿来介绍 Andoid 中的代理模式，本文也以 Binder 机制介绍。使用 Binder 机制分析 Android 中的代理机制，本文以 使用 aidl 进行跨进程调用作为分析的切入点，本节重点分析代理部分，对 Binder 机制分析的很少。</p>
-<p>需求很简单：进程 A 跨进程调用进程 B 的方法 getPid 返回进程 B 的进程 ID ，进程 B 是一个 Service ， 进程 A 和进程 B 分别位于 Android Studio 的 Client 和 Server 模块中。</p>
-<p>首先定义 aidl 文件</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// IPidInterface.aidl</span></span><br><span class="line"><span class="keyword">package</span> com.rock.proxydemo;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Declare any non-default types here with import statements</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">IPidInterface</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Demonstrates some basic types that you can use as parameters</span></span><br><span class="line"><span class="comment">     * and return values in AIDL.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">basicTypes</span><span class="params">(<span class="keyword">int</span> anInt, <span class="keyword">long</span> aLong, <span class="keyword">boolean</span> aBoolean, <span class="keyword">float</span> aFloat,</span></span></span><br><span class="line"><span class="function"><span class="params">            <span class="keyword">double</span> aDouble, String aString)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">getPid</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>代理接口就添加了一个 getPid 函数。将 aidl 文件拷贝到 B 所在的 module 的源码目录（ aidl 文件在 Client 和 Server 中要有相同的目录），然后在 Server 中添加 ProxyService ：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProxyService</span> <span class="keyword">extends</span> <span class="title">Service</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">ProxyService</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// <span class="doctag">TODO:</span> Return the communication channel to the service.</span></span><br><span class="line">        <span class="keyword">return</span> mBinder;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate();</span><br><span class="line">        Log.d(<span class="string">"remote_proxy_pid"</span>, <span class="string">"ProxyService onCreate"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onDestroy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onDestroy();</span><br><span class="line">        Log.d(<span class="string">"remote_proxy_pid"</span>, <span class="string">"ProxyService onDestory"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> IPidInterface.Stub mBinder = <span class="keyword">new</span> IPidInterface.Stub() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">basicTypes</span><span class="params">(<span class="keyword">int</span> anInt, <span class="keyword">long</span> aLong, <span class="keyword">boolean</span> aBoolean, <span class="keyword">float</span> aFloat, <span class="keyword">double</span> aDouble, String aString)</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getPid</span><span class="params">()</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> Process.myPid();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>逻辑很简单，声明了 IPidInterface.Stub 的实例 mBinder ，在 getPid 函数中返回了当前进程的 pid 。ProxyService 的注册内容如下：</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&lt;service</span><br><span class="line">    android:name=<span class="string">".ProxyService"</span></span><br><span class="line">    android:enabled=<span class="string">"true"</span></span><br><span class="line">    android:exported=<span class="string">"true"</span>&gt;</span><br><span class="line">    &lt;intent-filter&gt;</span><br><span class="line">        &lt;action android:name="com.rock.proxyserver.ProxyService"&gt;&lt;/action&gt;</span><br><span class="line">    &lt;/intent-filter&gt;</span><br><span class="line">&lt;/service&gt;</span><br></pre></td></tr></table></figure>
-
-<p>ok，服务端已经完成，接下来就看下客户端模块的调用过程了</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> IPidInterface mRemoteService;</span><br><span class="line"><span class="keyword">private</span> ServiceConnection mServiceConn = <span class="keyword">new</span> ServiceConnection() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceConnected</span><span class="params">(ComponentName name, IBinder service)</span> </span>&#123;</span><br><span class="line">        mRemoteService = IPidInterface.Stub.asInterface(service);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceDisconnected</span><span class="params">(ComponentName name)</span> </span>&#123;</span><br><span class="line">        mRemoteService = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 连接远程服务 ProxyService</span></span><br><span class="line">Intent intent = <span class="keyword">new</span> Intent();</span><br><span class="line">intent.setAction(<span class="string">"com.rock.proxyserver.ProxyService"</span>);</span><br><span class="line">intent.setPackage(<span class="string">"com.rock.proxyserver"</span>);</span><br><span class="line">bindService(intent, mServiceConn, Context.BIND_AUTO_CREATE);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 调用逻辑</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">showPid</span><span class="params">(View view)</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mRemoteService != <span class="keyword">null</span>) &#123;</span><br><span class="line">        Log.d(<span class="string">"remote_proxy_pid"</span>, mRemoteService.getPid() + <span class="string">""</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        Log.d(<span class="string">"remote_proxy_pid"</span>, <span class="string">"can not get remote pid"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>经过以上流程，首先运行 Server ，然后运行 Client ，就能通过跨进程调用的方式获取 Server 所在的进程 pid 。</p>
-<p>既然是在分析代理，那这一过程是如何体现代理的呢？</p>
-<p>aidl 文件会经过编译后，会自动生成相关类， IPidInterface.Stub , IPidInterface.Proxy。 Client 获取 服务端的进程 pid 是通过 IPidInterface 实例 mRemoteService ， mRemoteService 是如何生成的呢？看下 IPidInterface.Stub.asInterface 函数：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> com.rock.proxydemo.<span class="function">IPidInterface <span class="title">asInterface</span><span class="params">(android.os.IBinder obj)</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> com.rock.proxydemo.IPidInterface.Stub.Proxy(obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Proxy</span> <span class="keyword">implements</span> <span class="title">com</span>.<span class="title">rock</span>.<span class="title">proxydemo</span>.<span class="title">IPidInterface</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> android.os.IBinder mRemote;</span><br><span class="line">    Proxy(android.os.IBinder remote) &#123;</span><br><span class="line">        mRemote = remote;</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getPid</span><span class="params">()</span> <span class="keyword">throws</span> android.os.RemoteException </span>&#123;</span><br><span class="line">        android.os.Parcel _data = android.os.Parcel.obtain();</span><br><span class="line">        android.os.Parcel _reply = android.os.Parcel.obtain();</span><br><span class="line">        <span class="keyword">int</span> _result;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            _data.writeInterfaceToken(DESCRIPTOR);</span><br><span class="line">            mRemote.transact(Stub.TRANSACTION_getPid, _data, _reply, <span class="number">0</span>);</span><br><span class="line">            _reply.readException();</span><br><span class="line">            _result = _reply.readInt();</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            _reply.recycle();</span><br><span class="line">            _data.recycle();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> _result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>IPidInterface.Proxy 类实现了 IPidInterface 接口，实现了 getPid 函数。 mRemote 表示是服务端的服务引用，调用 transact 函数，通过标识符 Stub.TRANSACTION_getPid 告知 Server Client 调用的函数，Server 根据此标识符调用 getPid 函数，并将结果返回。</p>
-<p>可以发下，这一过程是一个标准的远程代理， IPidInterface.Proxy 实现和服务端相同的服务接口，保存服务端的引用 mRemote ，通过 mRemote 调用对应的服务函数。</p>
-<h2 id="AOP-中的代理"><a href="#AOP-中的代理" class="headerlink" title="AOP 中的代理"></a>AOP 中的代理</h2><p>代理模式可以在真实对象执行前和执行后添加额外的操作以满足具体的需求，AOP （面向切面编程）中常常会存在这样的场景。</p>
-<p>有这样的需求：统计前面静态代理和动态代理中，真实对象 operation 函数的执行耗时。</p>
-<p>首先使用静态代理实现这样的需求：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProxyObject</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> RealObject realObject;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ProxyObject</span><span class="params">(RealObject object)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		realObject = object;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">		realObject.operation();</span><br><span class="line">		<span class="keyword">long</span> end = System.currentTimeMillis();</span><br><span class="line">		System.out.println(<span class="string">"duration:"</span> + Math.abs(end - start));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>使用动态代理实现,修改 MyProxyHandler：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyProxyHandler</span> <span class="keyword">implements</span> <span class="title">InvocationHandler</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> Object mObject;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyProxyHandler</span><span class="params">(Object obj)</span> </span>&#123;</span><br><span class="line">        mObject = obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    	<span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">        Object object = method.invoke(mObject, args);</span><br><span class="line">        <span class="keyword">long</span> end = System.currentTimeMillis();</span><br><span class="line">		System.out.println(<span class="string">"duration:"</span> + Math.abs(end - start));</span><br><span class="line">        <span class="keyword">return</span> object;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>无论使用静态代理和是动态代理实现，都是在真实对象前后添加逻辑记录时间。</p>
-<p>以上实例是 代理模式在 AOP 的简单应用，AOP 的实现不仅仅是代理这一种方式，还可以使用修改字节码的方式将逻辑添加到 class 文件中实现切面拦截。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>代理模式（也称为委托模式）是一种结构型模式。</li>
-<li>代理类和真实对象要有相同的功能（实现相同的接口）。</li>
-<li>从代码实现上，代理模式分静态代理和动态代理；从应用场景上，代理模式分远程代理，保护代理，虚拟代理，只能引用</li>
-<li>Android 的 Binder 机制中，大量使用了远程代理。远程代理隐藏了服务端的实现细节，使得客户端可以忽略服务端。</li>
-<li>代理模式可以在真实对象执行前后添加逻辑，实现 AOP 。</li>
-</ul>
-<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p>1.《 Android 源码设计模式解析与实战》</p>
-<p>2.《JAVA与模式》之代理模式</p>
-<pre><code>https://www.cnblogs.com/java-my-life/archive/2012/04/23/2466712.html</code></pre><p>3.Java的三种代理模式</p>
-<pre><code>https://www.cnblogs.com/cenyu/p/6289209.html#autoid-0-0-0</code></pre><p>4.Java设计模式——代理模式实现及原理</p>
-<pre><code>https://blog.csdn.net/Goskalrie/article/details/52458773</code></pre><p>5.Java设计模式之代理模式（Proxy）</p>
-<pre><code>https://www.cnblogs.com/whoislcj/p/5693980.html</code></pre>
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-face/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="rockstore">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/go/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Rock">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/go/2020/05/05/design-pattern-face/" itemprop="url">外观模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T09:42:25+08:00">
-                2020-05-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="外观模式"><a href="#外观模式" class="headerlink" title="外观模式"></a>外观模式</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>子系统的外部与内部通信通过一个统一的对象进行，外观模式提供一个高层次的接口，是的系统更易于使用。</p>
-<h2 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h2><ul>
-<li>为一个复杂的子系统提供一个简单的接口。外观模式提供的简单接口，可以屏蔽子系统内部复杂的实现，隔离子系统内部的变化</li>
-<li>需要构件一个层次结构的子系统时，使用外观模式定义子系统的每层的入口点。如果子系统之间是相互依赖的，可以让他们通过外观模式进行通信，从而简化子系统之间的依赖关系</li>
-</ul>
-<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="http://p0.qhimg.com/t01b53f624e7b82426a.png" alt=""></p>
-<p>外观模式的 UML 如上图所示，角色如下：</p>
-<p><strong>Facade</strong>: 系统对外提供的统一入口，将所有客户的请求委派到相应的子系统</p>
-<p><strong>Class1, Class2, Class3</strong>:子系统，每个子系统可以不是一个单独的类，可以是多个类组成的一个功能。主要作用是接收来自 Facade 的请求。</p>
-<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>首先定义系统需要提供的功能 IFacede</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IFacade</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operate1</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operate2</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operate3</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>然后定义涉及到的系统模块， SystemA， SystemB，SystemC</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SystemA</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"fun1 of SystemA"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun2</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"fun2 of SystemA"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun3</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"fun3 of SystemA"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SystemB</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"fun1 of SystemB"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun2</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"fun2 of SystemB"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun3</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"fun3 of SystemB"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SystemC</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"fun1 of SystemC"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun2</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"fun2 of SystemC"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun3</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"fun3 of SystemC"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>实现 IFacede接口</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Facade</span> <span class="keyword">implements</span> <span class="title">IFacade</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> SystemA systemA;</span><br><span class="line">	<span class="keyword">private</span> SystemB systemB;</span><br><span class="line">	<span class="keyword">private</span> SystemC systemC;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Facade</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		systemA = <span class="keyword">new</span> SystemA();</span><br><span class="line">		systemB = <span class="keyword">new</span> SystemB();</span><br><span class="line">		systemC = <span class="keyword">new</span> SystemC();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operate1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		systemA.fun1();</span><br><span class="line">		systemB.fun2();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operate2</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		systemC.fun3();</span><br><span class="line">		systemB.fun2();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operate3</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		systemA.fun3();</span><br><span class="line">		systemC.fun2();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>operate1 功能需要系统模块 SystemA 的 fun1 方法和 SystemB 的 fun2 方法； operate2 功能需要系统模块 SystemC 的 fun3 方法和 SystemB 的 fun2 方法； operate3 功能需要系统模块 SystemA 的 fun3 方法和 SystemC 的 fun2 方法。</p>
-<p>通过提供 Facade 对象，客户端在实现 opeate1， operate2 和 operate3 功能时就不需要知道这些功能实现细节，直接调用功能对应的函数即可。</p>
-<h2 id="外观模式在-Android-中的使用"><a href="#外观模式在-Android-中的使用" class="headerlink" title="外观模式在 Android 中的使用"></a>外观模式在 Android 中的使用</h2><p>外观模式在 Android 中的使用场景还是比较多的，平时使用较多的 Context 就是一种外观模式的应用。Context 中定义了很多操作，比如 startActivity, startService, sendBroadCast…，这些操并不是由 Context 完成最终的实现，而是由其他模块完成。以 startActivity 举例说明，Context.startActivity 实际调用的是 ContextImpl.startActivity。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">startActivity</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    startActivity(intent, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">startActivity</span><span class="params">(Intent intent, Bundle options)</span> </span>&#123;</span><br><span class="line">      .......</span><br><span class="line">      mMainThread.getInstrumentation().execStartActivity(</span><br><span class="line">          getOuterContext(), mMainThread.getApplicationThread(), <span class="keyword">null</span>,</span><br><span class="line">          (Activity) <span class="keyword">null</span>, intent, -<span class="number">1</span>, options);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ActivityResult <span class="title">execStartActivity</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">            Context who, IBinder contextThread, IBinder token, Activity target,</span></span></span><br><span class="line"><span class="function"><span class="params">            Intent intent, <span class="keyword">int</span> requestCode, Bundle options)</span> </span>&#123;</span><br><span class="line">        ......</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ......</span><br><span class="line">            <span class="keyword">int</span> result = ActivityManager.getService()</span><br><span class="line">                .startActivity(whoThread, who.getBasePackageName(), intent,</span><br><span class="line">                        intent.resolveTypeIfNeeded(who.getContentResolver()),</span><br><span class="line">                        token, target != <span class="keyword">null</span> ? target.mEmbeddedID : <span class="keyword">null</span>,</span><br><span class="line">                        requestCode, <span class="number">0</span>, <span class="keyword">null</span>, options);</span><br><span class="line">            checkStartActivityResult(result, intent);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"Failure from system"</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>以上为 startActivity 的调用流程， startActivity 最终会调用 ActivityManagerService 的startActivity。以上流程只是 startActivity 整个流程中很小的一部分，实际的流程中还涉及应用进程和 ActivityManagerService 之间多次跨进程通信等操作。</p>
-<p>以 startActivity 为例只是为了说明 Context 中封装了很多底层操作，屏蔽了各种复杂的细节，为开发人员提供简洁的调用入口，具体的实现细节感兴趣的同学可以自行探索。</p>
-<p>在实际开发中，外观模式的使用可以说无处不在，我们自己封装的各种工具类，Glide， ImageLoader，ButterKnife，RxJava， EventBus 等框架，这些工具和框架为开发人员提供了简单的入口，屏蔽了内部的实现细节，都是外观模式的体现。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>外观模式是我们在开发过程中经常使用但是没有注意到的设计模式，一次函数的封装都是外观模式的使用。外观模式的主要目的是为复杂的实现提供统一简单的入口；屏蔽功能的实现细节，隔离内部的变化；同时内部子系统的通信也可以通过外观模式的 Facade 角色实现。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/go/page/2/">2</a><a class="extend next" rel="next" href="/go/page/2/">&gt;</a>
+    <span class="page-number current">1</span><a class="page-number" href="/go/page/2/">2</a><a class="page-number" href="/go/page/3/">3</a><a class="extend next" rel="next" href="/go/page/2/">&gt;</a>
   </nav>
 
 
@@ -2420,7 +2379,7 @@
               
                 <a href="/go/archives%7C%7C%20archive">
               
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">21</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2431,7 +2390,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/go/categories/index.html">
-                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-count">4</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>

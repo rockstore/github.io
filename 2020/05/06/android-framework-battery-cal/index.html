@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/go/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/go/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/go/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/go/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/go/images/favicon-32x32-next.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/go/images/favicon-16x16-next.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/go/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="引言前面已经分析了耗电统计服务 BSS 的启动流程，并简要说明了 BSS 是如何统计组件耗时的，本文将会以相机耗电统计的计算详细分析一下组件耗电的计算。 计算原理在分析 BSS 启动时，提到过新建 BatteryStatsService 实例，真正实现 BatteryStatsService 功能的是 BatteryStatsImpl 实例，看下 BatteryStatsImpl 实例 的构造函数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android 耗电计算简析">
+<meta property="og:url" content="https://rockstore.github.io/go/2020/05/06/android-framework-battery-cal/index.html">
+<meta property="og:site_name" content="Rock">
+<meta property="og:description" content="引言前面已经分析了耗电统计服务 BSS 的启动流程，并简要说明了 BSS 是如何统计组件耗时的，本文将会以相机耗电统计的计算详细分析一下组件耗电的计算。 计算原理在分析 BSS 启动时，提到过新建 BatteryStatsService 实例，真正实现 BatteryStatsService 功能的是 BatteryStatsImpl 实例，看下 BatteryStatsImpl 实例 的构造函数">
+<meta property="article:published_time" content="2020-05-05T16:54:59.000Z">
+<meta property="article:modified_time" content="2020-05-05T16:56:36.234Z">
+<meta property="article:author" content="rockstore">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/go/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/06/android-framework-battery-cal/"/>
+
+
+
+
+
+  <title>Android 耗电计算简析 | Rock</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/go/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Rock</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/go/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/go/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/go/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/go/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/06/android-framework-battery-cal/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android 耗电计算简析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-06T00:54:59+08:00">
+                2020-05-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android-framework/" itemprop="url" rel="index">
+                    <span itemprop="name">android framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android-framework/%E8%80%97%E7%94%B5%E5%88%86%E6%9E%90/" itemprop="url" rel="index">
+                    <span itemprop="name">耗电分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>前面已经分析了耗电统计服务 BSS 的启动流程，并简要说明了 BSS 是如何统计组件耗时的，本文将会以相机耗电统计的计算详细分析一下组件耗电的计算。</p>
+<h2 id="计算原理"><a href="#计算原理" class="headerlink" title="计算原理"></a>计算原理</h2><p>在分析 BSS 启动时，提到过新建 BatteryStatsService 实例，真正实现 BatteryStatsService 功能的是 BatteryStatsImpl 实例，看下 BatteryStatsImpl 实例 的构造函数</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">BatteryStatsImpl</span><span class="params">(Clocks clocks, File systemDir, Handler handler,</span></span></span><br><span class="line"><span class="function"><span class="params">            PlatformIdleStateCallback cb,</span></span></span><br><span class="line"><span class="function"><span class="params">            UserInfoProvider userInfoProvider)</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    mCameraOnTimer = <span class="keyword">new</span> StopwatchTimer(mClocks, <span class="keyword">null</span>, -<span class="number">13</span>, <span class="keyword">null</span>, mOnBatteryTimeBase);</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 BatteryStatsImpl 构造函数中，新建了一个 StopwatchTimer 实例 mCameraOnTimer，先不用关注 StopwatchTimer 的原理，只需要明白 mCameraOnTimer 的主要功能是计算相机的工作时长，本文的主要目的是带着大家一起了解 Android 是如何计算组件耗时。</p>
+<p>前面说过，BSS 并不主动统计耗电时长，仅仅是在有和耗电时间变化相关的事件发生时，调用 BSS 的 noteXXX 方法，进行耗电时间的统计，相机的耗电时间计算也是这样。</p>
+<h3 id="打开相机"><a href="#打开相机" class="headerlink" title="打开相机"></a>打开相机</h3><p>当某个应用打开相机时，BSS 会调用函数 noteStartCamera</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteStartCamera</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    enforceCallingPermission();</span><br><span class="line">    <span class="keyword">if</span> (DBG) Slog.d(TAG, <span class="string">"begin noteStartCamera"</span>);</span><br><span class="line">    <span class="keyword">synchronized</span> (mStats) &#123;</span><br><span class="line">        mStats.noteCameraOnLocked(uid);</span><br><span class="line">        StatsLog.write_non_chained(StatsLog.CAMERA_STATE_CHANGED, uid, <span class="keyword">null</span>,</span><br><span class="line">                StatsLog.CAMERA_STATE_CHANGED__STATE__ON);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (DBG) Slog.d(TAG, <span class="string">"end noteStartCamera"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 BSS 里的 mStats 是 BatteryStatsImpl 实例，可以看到，接下来会调用 BatteryStatsImpl 的 noteCameraOnLocked 函数，这里的参数 uid 表示某一个应用。继续跟踪</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteCameraOnLocked</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 将 isolated 应用的耗电信息映射到实际的应用</span></span><br><span class="line">    uid = mapUid(uid);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> elapsedRealtime = mClocks.elapsedRealtime();</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> uptime = mClocks.uptimeMillis();</span><br><span class="line">    <span class="keyword">if</span> (mCameraOnNesting++ == <span class="number">0</span>) &#123;</span><br><span class="line">		<span class="comment">// 相机第一次被打开</span></span><br><span class="line">        mHistoryCur.states2 |= HistoryItem.STATE2_CAMERA_FLAG;</span><br><span class="line">        <span class="keyword">if</span> (DEBUG_HISTORY) Slog.v(TAG, <span class="string">"Camera on to: "</span></span><br><span class="line">                + Integer.toHexString(mHistoryCur.states2));</span><br><span class="line">        addHistoryRecordLocked(elapsedRealtime, uptime);</span><br><span class="line">		<span class="comment">// 相机耗电的总统计入口</span></span><br><span class="line">        mCameraOnTimer.startRunningLocked(elapsedRealtime);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*-----------------------------分割线--------------------------------*/</span></span><br><span class="line">    <span class="comment">// 根据应用进行统计</span></span><br><span class="line">    getUidStatsLocked(uid).noteCameraTurnedOnLocked(elapsedRealtime);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>理解 mapUid 方法需要我们明白 isolated process 这一概念，isolated process 进程在运行时会在应用下新建一个特殊的进程，且 isolated process 拥有和应用不一样的 uid，为了统计应用下 isolated process 和其他进程，需要将 isolated process 进程的 uid 映射到应用的 uid，这样才能准确统计某一个应用的耗电。</p>
+<p>可以看到函数 noteCameraOnLocked 里有一条注视分割线，这条分割线是我自己添加的，分割线前面是统计相机的耗电时长，分割线后面是按照应用统计相机耗电时长。</p>
+<p>这里还有一个 int 类型参数 mCameraOnNesting ，这个变量的作用记录相机执行打开操作的次数，其实很好理解，如果是第一次执行打开操作，对于统计相机耗电时长来说，则需要开始执行统计，如果不是第一次执行打开，则不需要再开始统计。如果是第一次执行打开操作，则需要将此次打开操作添加到历史记录中，并执行 mCameraOnTimer.startRunningLocked 开始进行时间计算。</p>
+<p>执行完相机耗电时长统计后，接下来就是统计每个应用使用相机的时长。先看下 getUidStatsLocked 这个函数</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Uid <span class="title">getUidStatsLocked</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    Uid u = mUidStats.get(uid);</span><br><span class="line">    <span class="keyword">if</span> (u == <span class="keyword">null</span>) &#123;</span><br><span class="line">        u = <span class="keyword">new</span> Uid(<span class="keyword">this</span>, uid);</span><br><span class="line">        mUidStats.put(uid, u);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> u;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mUidStats 保存的是 uid -&gt; Uid 映射，uid 是 int 类型的数值，标识一个应用，Uid 记录每一个应用的耗电信息，这样一解释，getUidStatsLocked(uid).noteCameraTurnedOnLocked 其实就很好理解了，关注一下 Uid 的 noteCameraTurnedOnLocked 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteCameraTurnedOnLocked</span><span class="params">(<span class="keyword">long</span> elapsedRealtimeMs)</span> </span>&#123;</span><br><span class="line">    createCameraTurnedOnTimerLocked().startRunningLocked(elapsedRealtimeMs);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再继续跟踪 createCameraTurnedOnTimerLocked 方法，看它究竟返回的是什么对象</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> StopwatchTimer <span class="title">createCameraTurnedOnTimerLocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mCameraTurnedOnTimer == <span class="keyword">null</span>) &#123;</span><br><span class="line">        mCameraTurnedOnTimer = <span class="keyword">new</span> StopwatchTimer(mBsi.mClocks, Uid.<span class="keyword">this</span>, CAMERA_TURNED_ON,</span><br><span class="line">                mBsi.mCameraTurnedOnTimers, mBsi.mOnBatteryTimeBase);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> mCameraTurnedOnTimer;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现， Uid 内部也是用的 StopwatchTimer 实例记录相机的耗电时长。</p>
+<p>到这里，我们应该就有一个大致的印象了，BSS 使用 StopwatchTimer 记录相机的时长，BatteryStatsImpl 的 mCameraOnTimer 用于记录相机的总时长， Uid 内部的 mCameraTurnedOnTimer 用于记录每个应用的相机耗电时长。突然感觉一下子豁然开朗！！！！！</p>
+<h3 id="关闭相机"><a href="#关闭相机" class="headerlink" title="关闭相机"></a>关闭相机</h3><p>有打开相机，就有关闭相机，相机关闭时，如何更新相机的耗电时长呢？相机关闭时，会调用 BSS 的 noteStopCamera 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteStopCamera</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    enforceCallingPermission();</span><br><span class="line">    <span class="keyword">synchronized</span> (mStats) &#123;</span><br><span class="line">        mStats.noteCameraOffLocked(uid);</span><br><span class="line">        StatsLog.write_non_chained(StatsLog.CAMERA_STATE_CHANGED, uid, <span class="keyword">null</span>,</span><br><span class="line">                StatsLog.CAMERA_STATE_CHANGED__STATE__OFF);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 uid 是应用的 uid。接下来会调用 BatteryStatsImpl 的 noteCameraOffLocked 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteCameraOffLocked</span><span class="params">(<span class="keyword">int</span> uid)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mCameraOnNesting == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    uid = mapUid(uid);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> elapsedRealtime = mClocks.elapsedRealtime();</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> uptime = mClocks.uptimeMillis();</span><br><span class="line">    <span class="keyword">if</span> (--mCameraOnNesting == <span class="number">0</span>) &#123;</span><br><span class="line">        mHistoryCur.states2 &amp;= ~HistoryItem.STATE2_CAMERA_FLAG;</span><br><span class="line">        <span class="keyword">if</span> (DEBUG_HISTORY) Slog.v(TAG, <span class="string">"Camera off to: "</span></span><br><span class="line">                + Integer.toHexString(mHistoryCur.states2));</span><br><span class="line">        addHistoryRecordLocked(elapsedRealtime, uptime);</span><br><span class="line">        mCameraOnTimer.stopRunningLocked(elapsedRealtime);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*-----------------------------分割线--------------------------------*/</span></span><br><span class="line">    getUidStatsLocked(uid).noteCameraTurnedOffLocked(elapsedRealtime);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mCameraOnNesting 的作用可以参考在打开相机时的介绍。mCameraOnNesting == 0 表示相机已经关闭，故直接返回，接下来会通过 –mCameraOnNesting == 0 来判断此次关闭操作后，是否还有应用在使用相机，如果没有，则会保存此次记录，并停止计算相机耗电时长。这里也有一条分割线，分割线的含义和打开相机时的解释一致。后面的内容会在重置相机中进行分析。</p>
+<h3 id="重置相机"><a href="#重置相机" class="headerlink" title="重置相机"></a>重置相机</h3><p>为什么会有重置相机这一操作呢，其实很好理解，有这样的场景，多个应用都在使用相机，用户通过任务栏一次性将所有应用都杀死，那么所有应用都需要停止相机耗时统计。<br>和打开关闭相机一样，执行重置相机操作时，会调用 BSS 的 noteResetCamera 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteResetCamera</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    enforceCallingPermission();</span><br><span class="line">    <span class="keyword">synchronized</span> (mStats) &#123;</span><br><span class="line">        mStats.noteResetCameraLocked();</span><br><span class="line">        StatsLog.write_non_chained(StatsLog.CAMERA_STATE_CHANGED, -<span class="number">1</span>, <span class="keyword">null</span>,</span><br><span class="line">                StatsLog.CAMERA_STATE_CHANGED__STATE__RESET);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来会调用 BatteryStatsImpl 的 noteResetCameraLocked 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">noteResetCameraLocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mCameraOnNesting &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> elapsedRealtime = mClocks.elapsedRealtime();</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> uptime = mClocks.uptimeMillis();</span><br><span class="line">        mCameraOnNesting = <span class="number">0</span>;</span><br><span class="line">        mHistoryCur.states2 &amp;= ~HistoryItem.STATE2_CAMERA_FLAG;</span><br><span class="line">        <span class="keyword">if</span> (DEBUG_HISTORY) Slog.v(TAG, <span class="string">"Camera off to: "</span></span><br><span class="line">                + Integer.toHexString(mHistoryCur.states2));</span><br><span class="line">        addHistoryRecordLocked(elapsedRealtime, uptime);</span><br><span class="line">        mCameraOnTimer.stopAllRunningLocked(elapsedRealtime);</span><br><span class="line">        <span class="comment">/*-----------------------------分割线--------------------------------*/</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;mUidStats.size(); i++) &#123;</span><br><span class="line">            BatteryStatsImpl.Uid uid = mUidStats.valueAt(i);</span><br><span class="line">            uid.noteResetCameraLocked(elapsedRealtime);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mCameraOnNesting &gt; 0 表示相机处于被打开的状态，重置操作直接将 mCameraOnNesting 设置为 0，然后保存此次记录，并停止相机耗时统计。这里使用的是 stopAllRunningLocked 函数，和前面的 stopRunningLocked 有什么区别呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">stopAllRunningLocked</span><span class="params">(<span class="keyword">long</span> elapsedRealtimeMs)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mNesting &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        mNesting = <span class="number">1</span>;</span><br><span class="line">        stopRunningLocked(elapsedRealtimeMs);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>stopAllRunningLocked 最终也是调用 stopRunningLocked 方法，<br>mNesting 是 StopwatchTimer 内部的 int 类型参数，和 mCameraOnNesting 是相同的含义，不同的是 mCameraOnNesting 针对的相机这一组件， mNesting 针对的所有使用 StopwatchTimer 的实例。可能有一个疑问，执行 reset 操作时，mCameraOnNesting 被设置为 0，为什么执行 stopAllRunningLocked 后 mNesting 被设置为 1 呢？其实也很好理解，可以参考关闭相机时的分析，如果将 mNesting 设置为 0， 这stopRunningLocked 会直接返回，所以这里为了防止 stopRunningLocked 内部逻辑无法执行，就先将 mNesting 设置为 1 了。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文总结了相机计算耗电时长的逻辑，目的是让大家熟悉 BSS 是如何计算组件耗电时长的，这里要注意的时，进行耗电时长统计时，会按照组件和应用区分，比如对于本文提到的相机耗电时长，BSS 会记录相机耗电的总时长，也会按照应用统计每个应用使用相机的时长，这种模式会贯穿 BSS。至于本文中的 startXXX 和 stopXXX 方法，会在下篇分析 BSS 中的 Timer 体系中进行分析。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/go/2020/05/06/android-framework-battery/" rel="next" title="耗电统计服务启动">
+                <i class="fa fa-chevron-left"></i> 耗电统计服务启动
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rockstore</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/go/archives%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/go/categories/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/go/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#计算原理"><span class="nav-number">2.</span> <span class="nav-text">计算原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#打开相机"><span class="nav-number">2.1.</span> <span class="nav-text">打开相机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关闭相机"><span class="nav-number">2.2.</span> <span class="nav-text">关闭相机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重置相机"><span class="nav-number">2.3.</span> <span class="nav-text">重置相机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rockstore</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/go/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="设计模式," />
+  <meta name="keywords" content="Hexo, NexT" />
 
 
 
@@ -79,20 +79,12 @@
 
 
 
-<meta name="description" content="前言在开发过程中也经常涉及到设计模式，对设计模式的总结也仅仅是遇到了梳理一下，没有系统总结过，从这篇文章开始就总结一下java中的设计模式，并结合android做一下分析。  以上为前辈大佬总结的java设计模式，分三大类：创建型模式，结构型模式以及行为型模式，后面也会按照以上顺序进行分析。本文先分析开发中经常使用的单例模式。  以上为单例模式的UML，总结一下，实现单例模式需要有如下关键点：">
-<meta property="og:type" content="article">
-<meta property="og:title" content="单例模式">
-<meta property="og:url" content="https://rockstore.github.io/go/2020/05/04/design-pattern-singleton/index.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Rock">
+<meta property="og:url" content="https://rockstore.github.io/go/page/3/index.html">
 <meta property="og:site_name" content="Rock">
-<meta property="og:description" content="前言在开发过程中也经常涉及到设计模式，对设计模式的总结也仅仅是遇到了梳理一下，没有系统总结过，从这篇文章开始就总结一下java中的设计模式，并结合android做一下分析。  以上为前辈大佬总结的java设计模式，分三大类：创建型模式，结构型模式以及行为型模式，后面也会按照以上顺序进行分析。本文先分析开发中经常使用的单例模式。  以上为单例模式的UML，总结一下，实现单例模式需要有如下关键点：">
-<meta property="og:image" content="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/Desigin-Pattern.png">
-<meta property="og:image" content="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/singleton.png">
-<meta property="article:published_time" content="2020-05-04T14:07:27.000Z">
-<meta property="article:modified_time" content="2020-05-04T14:17:03.051Z">
 <meta property="article:author" content="rockstore">
-<meta property="article:tag" content="设计模式">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/Desigin-Pattern.png">
 
 
 
@@ -122,13 +114,13 @@
 
 
 
-  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/04/design-pattern-singleton/"/>
+  <link rel="canonical" href="https://rockstore.github.io/go/page/3/"/>
 
 
 
 
 
-  <title>单例模式 | Rock</title>
+  <title>Rock</title>
   
 
 
@@ -147,7 +139,8 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail">
+  <div class="container sidebar-position-left 
+  page-home">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -240,9 +233,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-
-  <div id="posts" class="posts-expand">
+  <section id="posts" class="posts-expand">
     
+      
 
   
 
@@ -272,7 +265,9 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">单例模式</h1>
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/04/design-pattern-singleton/" itemprop="url">单例模式</a></h1>
         
 
         <div class="post-meta">
@@ -344,7 +339,9 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在开发过程中也经常涉及到设计模式，对设计模式的总结也仅仅是遇到了梳理一下，没有系统总结过，从这篇文章开始就总结一下java中的设计模式，并结合android做一下分析。</p>
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在开发过程中也经常涉及到设计模式，对设计模式的总结也仅仅是遇到了梳理一下，没有系统总结过，从这篇文章开始就总结一下java中的设计模式，并结合android做一下分析。</p>
 <p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/Desigin-Pattern.png" alt=""></p>
 <p>以上为前辈大佬总结的java设计模式，分三大类：创建型模式，结构型模式以及行为型模式，后面也会按照以上顺序进行分析。本文先分析开发中经常使用的单例模式。</p>
 <p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/singleton.png" alt=""></p>
@@ -688,6 +685,8 @@ public Object getSystemService(String name) {
 <li>Activity 对象内部ContextImpl会对LayoutInflater对象进行缓存，如果已经存在，则直接返回缓存对象</li>
 </ul>
 
+          
+        
       
     </div>
     
@@ -702,36 +701,14 @@ public Object getSystemService(String name) {
 
     <footer class="post-footer">
       
-        <div class="post-tags">
-          
-            <a href="/go/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag"># 设计模式</a>
-          
-        </div>
+
+      
+
       
 
       
       
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/go/2020/05/04/design-pattern-factory/" rel="prev" title="工厂模式">
-                工厂模式 <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
-      
-
-      
+        <div class="post-eof"></div>
       
     </footer>
   </div>
@@ -741,11 +718,14 @@ public Object getSystemService(String name) {
   </article>
 
 
+    
+  </section>
 
-    <div class="post-spread">
-      
-    </div>
-  </div>
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/go/page/2/">&lt;</a><a class="page-number" href="/go/">1</a><a class="page-number" href="/go/page/2/">2</a><span class="page-number current">3</span>
+  </nav>
+
 
 
           </div>
@@ -753,10 +733,6 @@ public Object getSystemService(String name) {
 
 
           
-
-  
-
-
 
         </div>
         
@@ -777,17 +753,8 @@ public Object getSystemService(String name) {
       
 
       
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            站点概览
-          </li>
-        </ul>
-      
 
-      <section class="site-overview-wrap sidebar-panel">
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -847,22 +814,6 @@ public Object getSystemService(String name) {
         </div>
       </section>
 
-      
-      <!--noindex-->
-        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-              
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#懒汉模式"><span class="nav-number">2.</span> <span class="nav-text">懒汉模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#饿汉模式"><span class="nav-number">3.</span> <span class="nav-text">饿汉模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对象创建的方式"><span class="nav-number">4.</span> <span class="nav-text">对象创建的方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#枚举实现"><span class="nav-number">5.</span> <span class="nav-text">枚举实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#容器单例"><span class="nav-number">6.</span> <span class="nav-text">容器单例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Android中单例使用"><span class="nav-number">7.</span> <span class="nav-text">Android中单例使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
-            
-
-          </div>
-        </section>
-      <!--/noindex-->
       
 
       
@@ -996,10 +947,6 @@ public Object getSystemService(String name) {
   
 
   
-  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
-<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
-
-
 
   
 

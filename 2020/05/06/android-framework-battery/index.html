@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/go/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/go/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/go/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/go/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/go/images/favicon-32x32-next.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/go/images/favicon-16x16-next.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/go/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="引言Android 的耗电计算也是一个系统服务，本文包括以下内容：  耗电统计服务（BatteryStatsService，简称 BSS）的启动流程 耗电计算的简要流程  经过以上两部分的分析，可以帮助我们对 Android 的耗电计算有一个框架性的认识，后面的文章会对这种框架性的认识进行细节上的丰富。 Android 耗电统计概览BSS 的启动BatteryStatsService.java 文">
+<meta property="og:type" content="article">
+<meta property="og:title" content="耗电统计服务启动">
+<meta property="og:url" content="https://rockstore.github.io/go/2020/05/06/android-framework-battery/index.html">
+<meta property="og:site_name" content="Rock">
+<meta property="og:description" content="引言Android 的耗电计算也是一个系统服务，本文包括以下内容：  耗电统计服务（BatteryStatsService，简称 BSS）的启动流程 耗电计算的简要流程  经过以上两部分的分析，可以帮助我们对 Android 的耗电计算有一个框架性的认识，后面的文章会对这种框架性的认识进行细节上的丰富。 Android 耗电统计概览BSS 的启动BatteryStatsService.java 文">
+<meta property="article:published_time" content="2020-05-05T16:44:50.000Z">
+<meta property="article:modified_time" content="2020-05-05T16:46:34.666Z">
+<meta property="article:author" content="rockstore">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/go/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/06/android-framework-battery/"/>
+
+
+
+
+
+  <title>耗电统计服务启动 | Rock</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/go/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Rock</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/go/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/go/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/go/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/go/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/06/android-framework-battery/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">耗电统计服务启动</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-06T00:44:50+08:00">
+                2020-05-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android-framework/" itemprop="url" rel="index">
+                    <span itemprop="name">android framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android-framework/%E8%80%97%E7%94%B5%E5%88%86%E6%9E%90/" itemprop="url" rel="index">
+                    <span itemprop="name">耗电分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>Android 的耗电计算也是一个系统服务，本文包括以下内容：</p>
+<ul>
+<li>耗电统计服务（BatteryStatsService，简称 BSS）的启动流程</li>
+<li>耗电计算的简要流程</li>
+</ul>
+<p>经过以上两部分的分析，可以帮助我们对 Android 的耗电计算有一个框架性的认识，后面的文章会对这种框架性的认识进行细节上的丰富。</p>
+<h2 id="Android-耗电统计概览"><a href="#Android-耗电统计概览" class="headerlink" title="Android 耗电统计概览"></a>Android 耗电统计概览</h2><h2 id="BSS-的启动"><a href="#BSS-的启动" class="headerlink" title="BSS 的启动"></a>BSS 的启动</h2><p>BatteryStatsService.java 文件位于 </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">platform_frameworks_base/services/core/java/com/android/server/am/</span><br></pre></td></tr></table></figure>
+
+<p>BSS 的启动逻辑位于 ActivityManagerService （AMS）的构造函数中</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 新建 BatteryStatsService 实例</span></span><br><span class="line">mBatteryStatsService = <span class="keyword">new</span> BatteryStatsService(systemContext, systemDir, mHandler);</span><br><span class="line"><span class="comment">// 读取已经保存的耗电信息</span></span><br><span class="line">mBatteryStatsService.getActiveStatistics().readLocked();</span><br><span class="line"><span class="comment">// 写入耗电信息</span></span><br><span class="line">mBatteryStatsService.scheduleWriteToDisk();</span><br><span class="line">mOnBattery = DEBUG_POWER ? <span class="keyword">true</span></span><br><span class="line">                : mBatteryStatsService.getActiveStatistics().getIsOnBattery();</span><br><span class="line"><span class="comment">// 设置耗电信息更新的回调</span></span><br><span class="line">mBatteryStatsService.getActiveStatistics().setCallback(<span class="keyword">this</span>);</span><br></pre></td></tr></table></figure>
+<p>这里有一个点可能会被忽略，AMS 的构造函数在新建 AMS 的对象（一句废话），此时正是系统启动的过程，记住这一点。BSS 的启动逻辑做了四个操作：</p>
+<ul>
+<li>新建 BatteryStatusService 实例</li>
+<li>读取已经保存的耗电信息</li>
+<li>写入耗电信息</li>
+<li>设置耗电更新回调</li>
+</ul>
+<p>接下来分别对这四个操作进行分析</p>
+<h3 id="新建-BatteryStatsService-实例"><a href="#新建-BatteryStatsService-实例" class="headerlink" title="新建 BatteryStatsService 实例"></a>新建 BatteryStatsService 实例</h3><p>虽然仅仅是新建了 BatteryStatsService 实例，但是这条语句蕴含的内容却很多</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">BatteryStatsService(Context context, File systemDir, Handler handler) &#123;</span><br><span class="line">    <span class="comment">// BatteryStatsImpl expects the ActivityManagerService handler, so pass that one through.</span></span><br><span class="line">    mContext = context;</span><br><span class="line">    mUserManagerUserInfoProvider = <span class="keyword">new</span> BatteryStatsImpl.UserInfoProvider() &#123;</span><br><span class="line">        <span class="keyword">private</span> UserManagerInternal umi;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">int</span>[] getUserIds() &#123;</span><br><span class="line">            <span class="keyword">if</span> (umi == <span class="keyword">null</span>) &#123;</span><br><span class="line">                umi = LocalServices.getService(UserManagerInternal<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> (umi != <span class="keyword">null</span>) ? umi.getUserIds() : <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    mStats = <span class="keyword">new</span> BatteryStatsImpl(systemDir, handler, <span class="keyword">this</span>, mUserManagerUserInfoProvider);</span><br><span class="line">	<span class="comment">// mWorker 内部统计收集电池信息</span></span><br><span class="line">    ......</span><br><span class="line">    mStats.setPowerProfileLocked(<span class="keyword">new</span> PowerProfile(context));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mUserManagerUserInfoProvider 类的作用是获取系统上应用的 uid 集合，获取 uid 集合的目的是为了统计不同应用的耗电情况，后面在分析不同应用耗电时会有介绍。BatteryStatsService 的作用是进行耗电统计，但是真正实现这些功能的类是 BatteryStatsImpl 类。最后一条语句需要上下代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mStats.setPowerProfileLocked(<span class="keyword">new</span> PowerProfile(context));</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">PowerProfile</span><span class="params">(Context context, <span class="keyword">boolean</span> forTest)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Read the XML file for the given profile (normally only one per device)</span></span><br><span class="line">    <span class="keyword">synchronized</span> (sLock) &#123;</span><br><span class="line">        <span class="keyword">if</span> (sPowerItemMap.size() == <span class="number">0</span> &amp;&amp; sPowerArrayMap.size() == <span class="number">0</span>) &#123;</span><br><span class="line">            readPowerValuesFromXml(context, forTest);</span><br><span class="line">        &#125;</span><br><span class="line">        initCpuClusters();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调用 setPowerProfileLocked ，最终通过 readPowerValuesFromXml 获取手机不同组件的耗电信息。 readPowerValuesFromXml 读取的是 frameworks/core/res/res/xml/power_profile.xml 文件里的配置信息，可以看下配置信息的格式</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">device</span> <span class="attr">name</span>=<span class="string">"Android"</span>&gt;</span></span><br><span class="line">  ......</span><br><span class="line">  <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"wifi.on"</span>&gt;</span>0.1<span class="tag">&lt;/<span class="name">item</span>&gt;</span>  <span class="comment">&lt;!-- ~3mA --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"wifi.active"</span>&gt;</span>0.1<span class="tag">&lt;/<span class="name">item</span>&gt;</span>  <span class="comment">&lt;!-- WIFI data transfer, ~200mA --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"wifi.scan"</span>&gt;</span>0.1<span class="tag">&lt;/<span class="name">item</span>&gt;</span>  <span class="comment">&lt;!-- WIFI network scanning, ~100mA --&gt;</span></span><br><span class="line">  .......</span><br><span class="line"><span class="tag">&lt;/<span class="name">device</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>如上所示 power_profile.xml 里组件的耗电是电流信息，为什么会是这样呢？对于手机来说，电压是固定的，根据功率计算公式</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">P = U * I</span><br><span class="line">W = P * t</span><br></pre></td></tr></table></figure>
+<p>只需要知道电流和时间，就可以计算组件的耗电了，由于组件的电流也以配置文件的方式固定下来，所以<strong>通常来说，统计组件耗电就是统计组件在不同状态的运行时间。</strong></p>
+<p>这里还有一个比较重要的位置，SystemService 在启动完 AMS 之后，会调用 AMS 的 initPowerManagement 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">startBootstrapServices</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    mActivityManagerService.initPowerManagement();</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>继续跟踪一下 AMS 的 initPowerManagement 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">initPowerManagement</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    mBatteryStatsService.initPowerManagement();</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看下 BSS 内部是如何执行 initPowerManagement </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">initPowerManagement</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> PowerManagerInternal powerMgr = LocalServices.getService(PowerManagerInternal<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">    powerMgr.registerLowPowerModeObserver(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">synchronized</span> (mStats) &#123;</span><br><span class="line">        mStats.notePowerSaveModeLocked(</span><br><span class="line">                powerMgr.getLowPowerState(ServiceType.BATTERY_STATS)</span><br><span class="line">                        .batterySaverEnabled);</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行 initPowerManagement 首先获取了 PowerManager 服务，然后注册了低电模式的监听器，执行 mStats.notePowerSaveModeLocked 开始统计低电耗时统计。</p>
+<h3 id="读取已经保存的耗电信息"><a href="#读取已经保存的耗电信息" class="headerlink" title="读取已经保存的耗电信息"></a>读取已经保存的耗电信息</h3><p>耗电服务 BatteryStatusService 在记录系统组件耗电的同时，会将这些信息保存在文件 /data/system/batterystats.bin 中，mBatteryStatsService.getActiveStatistics() 返回 BatteryStatsImpl 实例，mBatteryStatsService.getActiveStatistics().readLocked 调用 BatteryStatsImpl 的 readLocked() 方法。 readLocked 方法主要读取了系统存储的每天耗电信息以及其他的耗电统计信息，可以自己去分析以下。</p>
+<h3 id="写入耗电信息"><a href="#写入耗电信息" class="headerlink" title="写入耗电信息"></a>写入耗电信息</h3><p>写入耗电信息 的作用是对当前系统的耗电统计进行记录，写入到日志文件中。</p>
+<h3 id="设置耗电更新回调"><a href="#设置耗电更新回调" class="headerlink" title="设置耗电更新回调"></a>设置耗电更新回调</h3><p>耗电回调 BatteryCallback 接口如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BatteryCallback</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 需要更新 CPU 耗电信息</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batteryNeedsCpuUpdate</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="comment">// 手机在供电在电源供电和电池供电之间发生了变化，onBattery 表示是否电池供电</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batteryPowerChanged</span><span class="params">(<span class="keyword">boolean</span> onBattery)</span></span>;</span><br><span class="line">    <span class="comment">// 手机在充电和放电之间发生了变化，intent 中根据 action 信息标示充电（android.os.action.CHARGING）和放电（android.os.action.DISCHARGING）状态</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batterySendBroadcast</span><span class="params">(Intent intent)</span></span>;</span><br><span class="line">    <span class="comment">// 电池统计信息被重制</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batteryStatsReset</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="服务发布"><a href="#服务发布" class="headerlink" title="服务发布"></a>服务发布</h3><p>BSS 是一个系统服务，需要将服务发布出去以便向外部暴露相关的接口，BSS 是如何将自己发布出去的呢？ ActivityManagerService 在启动的时候，会调用 onStart() 方法，最终会调用 ActivityManagerService 的 start 方法， start 方法内部会进行 BSS 的服务发布</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">private void start() &#123;</span><br><span class="line">    ......</span><br><span class="line">    mBatteryStatsService.publish();</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>继续跟踪 mBatteryStatsService.publish() 代码，最终看到了如下的位置，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public void publish() &#123;</span><br><span class="line">    LocalServices.addService(BatteryStatsInternal.class, new LocalService());</span><br><span class="line">    ServiceManager.addService(BatteryStats.SERVICE_NAME, asBinder());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>LocalServices 的作用有点类似 ServiceManager 的功能，不通的是 LocalServices 内部管理的服务不是 Binder 对象，且其保存的服务是为本进程内部使用的。这里在进行服务发布的时候，先在 LocalServices 执行了 addService 方法以便本进程使用 BSS，接着在 ServiceManager 执行了 addService 方法以便其他进程使用 BSS。</p>
+<h2 id="耗电计算的简要流程"><a href="#耗电计算的简要流程" class="headerlink" title="耗电计算的简要流程"></a>耗电计算的简要流程</h2><p>前面分析了 BSS 的启动和 BSS 的发布，但是有一个疑问一直存在，分析 BSS 启动的时候，仅仅出现了 BSS 实例的新建和相关配置信息读取，分析 BSS 的发布也仅仅是一个发布的操作，BSS 究竟是如何进行耗电统计的呢？<br>BSS 并不主动进行耗电统计，而是被动更新系统组件的耗电时间。前面以及说过，BSS 内部耗电的最终计算实际是 BatteryStatsImpl 实例完成的，BSS 在收到和耗电相关的事件或者外部主动更新耗电信息时，会调用 BSS 的 noteXXX 方法，最终会调用 BatteryStatsImpl 内的方法，更新耗电组件的耗电时间信息。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文概述了 Android 的耗电启动并简单说明了 BSS 的耗电计算流程，下篇文章将会以相机的耗电计算为例，分析 Android 的耗电计算流程。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/go/2020/05/06/java-anno/" rel="next" title="Java 注解实现简析">
+                <i class="fa fa-chevron-left"></i> Java 注解实现简析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/go/2020/05/06/android-framework-battery-cal/" rel="prev" title="Android 耗电计算简析">
+                Android 耗电计算简析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rockstore</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/go/archives%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/go/categories/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/go/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Android-耗电统计概览"><span class="nav-number">2.</span> <span class="nav-text">Android 耗电统计概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BSS-的启动"><span class="nav-number">3.</span> <span class="nav-text">BSS 的启动</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#新建-BatteryStatsService-实例"><span class="nav-number">3.1.</span> <span class="nav-text">新建 BatteryStatsService 实例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取已经保存的耗电信息"><span class="nav-number">3.2.</span> <span class="nav-text">读取已经保存的耗电信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#写入耗电信息"><span class="nav-number">3.3.</span> <span class="nav-text">写入耗电信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置耗电更新回调"><span class="nav-number">3.4.</span> <span class="nav-text">设置耗电更新回调</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#服务发布"><span class="nav-number">3.5.</span> <span class="nav-text">服务发布</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#耗电计算的简要流程"><span class="nav-number">4.</span> <span class="nav-text">耗电计算的简要流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rockstore</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/go/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
