@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/go/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/go/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/go/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/go/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/go/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/go/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/go/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言注解是平时开发过程中使用频率很高的点，主机的基础可以参考这篇文章：https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;9471d6bcf4cf ，本文会从简单的 Demo 开始，逐步深入分析注解是如何实现的。 Demo 引入12345@Target(ElementType.METHOD)@Retention(RetentionPolicy.RUNTIME)public @interface A">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 注解实现简析">
+<meta property="og:url" content="https://rockstore.github.io/go/2020/05/06/java-anno/index.html">
+<meta property="og:site_name" content="Rock">
+<meta property="og:description" content="前言注解是平时开发过程中使用频率很高的点，主机的基础可以参考这篇文章：https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;9471d6bcf4cf ，本文会从简单的 Demo 开始，逐步深入分析注解是如何实现的。 Demo 引入12345@Target(ElementType.METHOD)@Retention(RetentionPolicy.RUNTIME)public @interface A">
+<meta property="og:image" content="https://raw.githubusercontent.com/rockstore/images/master/annotation/anno_hierarchy.jpg">
+<meta property="article:published_time" content="2020-05-05T16:04:15.000Z">
+<meta property="article:modified_time" content="2020-05-05T16:11:45.310Z">
+<meta property="article:author" content="rockstore">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/rockstore/images/master/annotation/anno_hierarchy.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/go/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/06/java-anno/"/>
+
+
+
+
+
+  <title>Java 注解实现简析 | Rock</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/go/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Rock</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/go/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/go/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/go/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/go/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/06/java-anno/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Java 注解实现简析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-06T00:04:15+08:00">
+                2020-05-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/Java-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index">
+                    <span itemprop="name">Java 基础知识</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>注解是平时开发过程中使用频率很高的点，主机的基础可以参考这篇文章：<a href="https://www.jianshu.com/p/9471d6bcf4cf" target="_blank" rel="noopener">https://www.jianshu.com/p/9471d6bcf4cf</a> ，本文会从简单的 Demo 开始，逐步深入分析注解是如何实现的。</p>
+<h2 id="Demo-引入"><a href="#Demo-引入" class="headerlink" title="Demo 引入"></a>Demo 引入</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Target</span>(ElementType.METHOD)</span><br><span class="line"><span class="meta">@Retention</span>(RetentionPolicy.RUNTIME)</span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> AnnoTest &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">test</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>定义了一个方法的注解，就不做语法上的解释了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AnnoTestClz</span> </span>&#123;</span><br><span class="line">    <span class="meta">@AnnoTest</span>(test = <span class="string">"test1"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"test anno"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>申明了一个简单的类，在 test 方法上使用了 AnnoTest 注解，接下来使用简单的测试程序使用注解</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">AnnoTestClz atc = <span class="keyword">new</span> AnnoTestClz();</span><br><span class="line">Method test = atc.getClass().getDeclaredMethod(<span class="string">"test"</span>);</span><br><span class="line">AnnoTest annoTest = test.getDeclaredAnnotation(AnnoTest<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">System.out.println(annoTest.test());</span><br></pre></td></tr></table></figure>
+<p>程序运行结果如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">test1</span><br></pre></td></tr></table></figure>
+<p>其实程序的运行结果不用分析，一眼就能看出来，接下来就开始分析下以下语句是如何运行的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">AnnoTest annoTest = test.getDeclaredAnnotation(AnnoTest<span class="class">.<span class="keyword">class</span>)</span>;</span><br></pre></td></tr></table></figure>
+<h2 id="深入"><a href="#深入" class="headerlink" title="深入"></a>深入</h2><p>本节的主要内容是分析 test.getDeclaredAnnotation ，其实就是分析类 Method 的 getDeclaredAnnotation 方法，那就开始深入吧</p>
+<h3 id="getDeclaredAnnotation"><a href="#getDeclaredAnnotation" class="headerlink" title="getDeclaredAnnotation"></a>getDeclaredAnnotation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> &lt;T extends Annotation&gt; <span class="function">T <span class="title">getDeclaredAnnotation</span><span class="params">(Class&lt;T&gt; annotationClass)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Only annotations on classes are inherited, for all other</span></span><br><span class="line">    <span class="comment">// objects getDeclaredAnnotation is the same as</span></span><br><span class="line">    <span class="comment">// getAnnotation.</span></span><br><span class="line">    <span class="keyword">return</span> getAnnotation(annotationClass);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法不是 Method 中的方法，而是 Method 父类 AccessibleObject 类中的方法，这里有必要说明下这里面涉及到的类继承结构。</p>
+<p><img src="https://raw.githubusercontent.com/rockstore/images/master/annotation/anno_hierarchy.jpg" alt=""></p>
+<p>从上图可以看出，Method 方法继承 Executable , Executable 继承 AccessibleObject 。继续跟踪 Method 类中的 getAnnotation(annotationClass) 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T extends Annotation&gt; <span class="function">T <span class="title">getAnnotation</span><span class="params">(Class&lt;T&gt; annotationClass)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">super</span>.getAnnotation(annotationClass);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Method 最终会调用父类 AccessibleObject 的 getAnnotation(annotationClass) 方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T extends Annotation&gt; <span class="function">T <span class="title">getAnnotation</span><span class="params">(Class&lt;T&gt; annotationClass)</span> </span>&#123;</span><br><span class="line">    Objects.requireNonNull(annotationClass);</span><br><span class="line">    <span class="keyword">return</span> annotationClass.cast(declaredAnnotations().get(annotationClass));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>annotationClass.cast 方法是对象转换方法，直觉告诉我，declaredAnnotations() 方法获取了全部的注解，保存成了 Map 的接口，然后根据传入的注解 Class 获取注解的实例。OK，废话不多说，让我们赶紧去看看 declaredAnnotations() 方法的实现。</p>
+<h3 id="declaredAnnotations"><a href="#declaredAnnotations" class="headerlink" title="declaredAnnotations"></a>declaredAnnotations</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">synchronized</span>  Map&lt;Class&lt;? extends Annotation&gt;, Annotation&gt; declaredAnnotations() &#123;</span><br><span class="line">    <span class="keyword">if</span> (declaredAnnotations == <span class="keyword">null</span>) &#123;</span><br><span class="line">        Executable root = getRoot();</span><br><span class="line">        <span class="keyword">if</span> (root != <span class="keyword">null</span>) &#123;</span><br><span class="line">            declaredAnnotations = root.declaredAnnotations();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            declaredAnnotations = AnnotationParser.parseAnnotations(</span><br><span class="line">                getAnnotationBytes(),</span><br><span class="line">                sun.misc.SharedSecrets.getJavaLangAccess().</span><br><span class="line">                getConstantPool(getDeclaringClass()),</span><br><span class="line">                getDeclaringClass());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> declaredAnnotations;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>果然不出所料， declaredAnnotations() 返回了注解 class 到注解对象的 Map 结构。注意，declaredAnnotations() 方法是在类 Executable 中。这里有一个新的东西 getRoot() 方法，getRoot() 方法返回一个 Executable 实例，是一个抽象方法，在 Method 实现中，会返回一个 Method 类型的的对象 root ，root 的主要作用是实现注解共享。如何理解注解共享呢？注解共享，顾名思义，就是许多个方法使用同样的注解信息，什么时候会用到呢？<br>注解的共享主要用在 Method 对象的复制，在复制时，让所有复制的对象都指向最开始被复制的 Method 对象，这样，只要最开始的被复制对象执行了注解的解析，后面复制的对象就可以直接使用已经被解析的注解信息，这算是对注解的优化（大家可以参考 Mehtod 类中的 copy 方法）。最开始被复制对象在执行注解的解析时，会执行 declaredAnnotations() 里的 else 分支。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">declaredAnnotations = AnnotationParser.parseAnnotations(</span><br><span class="line">                getAnnotationBytes(),</span><br><span class="line">                sun.misc.SharedSecrets.getJavaLangAccess().</span><br><span class="line">                getConstantPool(getDeclaringClass()),</span><br><span class="line">                getDeclaringClass());</span><br></pre></td></tr></table></figure>
+<p>在分析 parseAnnotations 方法之前，我们要对这个方法中的参数有所了解，不然后面的分析会无所适从。</p>
+<ul>
+<li>getAnnotationBytes()</li>
+</ul>
+<p>方法的名字很清晰的表达了这个函数返回的内容，就是注解的 byte 数组，如何理解注解的 byte 数组，注解为什么会有 byte 数组？Method 中的注解信息以 byte 数组的形式存在与 Method 对象的 annotations 变量中，annotatins 变量在 Method 对象被新建时赋值的，可以大致看下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">Method(Class&lt;?&gt; declaringClass,</span><br><span class="line">           String name,</span><br><span class="line">           Class&lt;?&gt;[] parameterTypes,</span><br><span class="line">           Class&lt;?&gt; returnType,</span><br><span class="line">           Class&lt;?&gt;[] checkedExceptions,</span><br><span class="line">           <span class="keyword">int</span> modifiers,</span><br><span class="line">           <span class="keyword">int</span> slot,</span><br><span class="line">           String signature,</span><br><span class="line">           <span class="keyword">byte</span>[] annotations,</span><br><span class="line">           <span class="keyword">byte</span>[] parameterAnnotations,</span><br><span class="line">           <span class="keyword">byte</span>[] annotationDefault) &#123;</span><br><span class="line">        <span class="keyword">this</span>.clazz = declaringClass;</span><br><span class="line">        <span class="keyword">this</span>.name = name;</span><br><span class="line">        <span class="keyword">this</span>.parameterTypes = parameterTypes;</span><br><span class="line">        <span class="keyword">this</span>.returnType = returnType;</span><br><span class="line">        <span class="keyword">this</span>.exceptionTypes = checkedExceptions;</span><br><span class="line">        <span class="keyword">this</span>.modifiers = modifiers;</span><br><span class="line">        <span class="keyword">this</span>.slot = slot;</span><br><span class="line">        <span class="keyword">this</span>.signature = signature;</span><br><span class="line">        <span class="keyword">this</span>.annotations = annotations;</span><br><span class="line">        <span class="keyword">this</span>.parameterAnnotations = parameterAnnotations;</span><br><span class="line">        <span class="keyword">this</span>.annotationDefault = annotationDefault;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>至于该构造方法在什么位置被调用，感兴趣的同学可以参考下类 Class 的 privateGetDeclaredMethods 方法。</p>
+<ul>
+<li>sun.misc.SharedSecrets.getJavaLangAccess().<pre><code>getConstantPool(getDeclaringClass())</code></pre></li>
+</ul>
+<p>这个方法获取了申明这个方法的 Class 的常量池信息，至于什么是常量池，大家可以搜一下 Class 文件的结构。</p>
+<ul>
+<li>getDeclaringClass()</li>
+</ul>
+<p>这个方法就不多说了，很明显了。</p>
+<p>OK，接下来就开始进入 AnnotationParser.parseAnnotations 方法了。</p>
+<h3 id="parseAnnotations"><a href="#parseAnnotations" class="headerlink" title="parseAnnotations"></a>parseAnnotations</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Map&lt;Class&lt;? extends Annotation&gt;, Annotation&gt; parseAnnotations(</span><br><span class="line">                <span class="keyword">byte</span>[] rawAnnotations,</span><br><span class="line">                ConstantPool constPool,</span><br><span class="line">                Class&lt;?&gt; container) &#123;</span><br><span class="line">    <span class="keyword">if</span> (rawAnnotations == <span class="keyword">null</span>)</span><br><span class="line">        <span class="keyword">return</span> Collections.emptyMap();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> parseAnnotations2(rawAnnotations, constPool, container, <span class="keyword">null</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span>(BufferUnderflowException e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> AnnotationFormatError(<span class="string">"Unexpected end of annotations."</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span>(IllegalArgumentException e) &#123;</span><br><span class="line">        <span class="comment">// Type mismatch in constant pool</span></span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> AnnotationFormatError(e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>逻辑比较清晰，继续看 parseAnnotations2 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Map&lt;Class&lt;? extends Annotation&gt;, Annotation&gt; parseAnnotations2(<span class="keyword">byte</span>[] var0, ConstantPool var1, Class&lt;?&gt; var2, Class&lt;? extends Annotation&gt;[] var3) &#123;</span><br><span class="line">    LinkedHashMap result = <span class="keyword">new</span> LinkedHashMap();</span><br><span class="line">    <span class="comment">// 使用注解字节码数据构造 ByteBuffer 实例 var5</span></span><br><span class="line">    ByteBuffer buf = ByteBuffer.wrap(var0);</span><br><span class="line">    <span class="comment">// 获取 Method 注解的数量（一个 Method 可以有多个注解）</span></span><br><span class="line">    <span class="keyword">int</span> numAnnotations = buf.getShort() &amp; <span class="string">'\uffff'</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; numAnnotations; i++) &#123;</span><br><span class="line">        <span class="comment">// 逐个解析注解，并获取注解的实例</span></span><br><span class="line">        Annotation a = parseAnnotation2(buf, constPool, container, <span class="keyword">false</span>, selectAnnotationClasses);</span><br><span class="line">        <span class="keyword">if</span> (a != <span class="keyword">null</span>) &#123;</span><br><span class="line">            Class klass = a.annotationType();</span><br><span class="line">            <span class="comment">// 将注解实例按照类型存储在 result 中</span></span><br><span class="line">            <span class="keyword">if</span> (AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME &amp;&amp; result.put(klass, a) != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> AnnotationFormatError(</span><br><span class="line">                            <span class="string">"Duplicate annotation for class: "</span>+klass+<span class="string">": "</span> + a);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> var4;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过对 parseAnnotations2 方法的注释，相信大家已经对注解的解析过程有了一个比较清晰的理解。接下来，就到了最为核心的倒数第三步了，先给大家剧透以下，注解最终的实现是通过动态代理实现的。通过 parseAnnotation2 方法获取到注解的实例对象 a 后，按照注解的类型（Class）将 a 保存在 result 中，后续获取则直接通过 result 获取。</p>
+<p>OK，接下来我们就要分析非常核心的函数 parseAnnotation2 了。</p>
+<h3 id="parseAnnotation2"><a href="#parseAnnotation2" class="headerlink" title="parseAnnotation2"></a>parseAnnotation2</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Annotation <span class="title">parseAnnotation2</span><span class="params">(ByteBuffer buf,</span></span></span><br><span class="line"><span class="function"><span class="params">                                              ConstantPool constPool,</span></span></span><br><span class="line"><span class="function"><span class="params">                                              Class&lt;?&gt; container,</span></span></span><br><span class="line"><span class="function"><span class="params">                                              <span class="keyword">boolean</span> exceptionOnMissingAnnotationClass,</span></span></span><br><span class="line"><span class="function"><span class="params">                                              Class&lt;? extends Annotation&gt;[] selectAnnotationClasses)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 常量池中注解类型描述符的索引</span></span><br><span class="line">    <span class="keyword">int</span> typeIndex = buf.getShort() &amp; <span class="number">0xFFFF</span>;</span><br><span class="line">    Class&lt;? extends Annotation&gt; annotationClass = <span class="keyword">null</span>;</span><br><span class="line">    String sig = <span class="string">"[unknown]"</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 注解的类型，在前面的 Demo 中，sig 就是AnnoTest类的签名信息</span></span><br><span class="line">            sig = constPool.getUTF8At(typeIndex);</span><br><span class="line">            <span class="comment">// 根据 sig 签名信息，获取 Class 信息</span></span><br><span class="line">            annotationClass = (Class&lt;? extends Annotation&gt;)parseSig(sig, container);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IllegalArgumentException ex) &#123;</span><br><span class="line">            <span class="comment">// support obsolete early jsr175 format class files</span></span><br><span class="line">            annotationClass = (Class&lt;? extends Annotation&gt;)constPool.getClassAt(typeIndex);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (NoClassDefFoundError e) &#123;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (TypeNotPresentException e) &#123;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">    <span class="comment">// AnnotationType 实例保存了注解内部的成员信息</span></span><br><span class="line">    AnnotationType type = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        type = AnnotationType.getInstance(annotationClass);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IllegalArgumentException e) &#123;</span><br><span class="line">        skipAnnotation(buf, <span class="keyword">false</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Map&lt;String, Class&lt;?&gt;&gt; memberTypes = type.memberTypes();</span><br><span class="line">    Map&lt;String, Object&gt; memberValues =</span><br><span class="line">        <span class="keyword">new</span> LinkedHashMap&lt;String, Object&gt;(type.memberDefaults());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> numMembers = buf.getShort() &amp; <span class="number">0xFFFF</span>;</span><br><span class="line">    <span class="comment">// 遍历注解的所有方法，并将每个方法的值保存在 memberValues 变量中</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; numMembers; i++) &#123;</span><br><span class="line">        <span class="keyword">int</span> memberNameIndex = buf.getShort() &amp; <span class="number">0xFFFF</span>;</span><br><span class="line">        String memberName = constPool.getUTF8At(memberNameIndex);</span><br><span class="line">        Class&lt;?&gt; memberType = memberTypes.get(memberName);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (memberType == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="comment">// Member is no longer present in annotation type; ignore it</span></span><br><span class="line">            skipMemberValue(buf);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            Object value = parseMemberValue(memberType, buf, constPool, container);</span><br><span class="line">            <span class="keyword">if</span> (value <span class="keyword">instanceof</span> AnnotationTypeMismatchExceptionProxy)</span><br><span class="line">                ((AnnotationTypeMismatchExceptionProxy) value).</span><br><span class="line">                    setMember(type.members().get(memberName));</span><br><span class="line">            memberValues.put(memberName, value);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> annotationForMap(annotationClass, memberValues);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>方法看似很长，逻辑梳理起来很简单，就是逐个遍历注解的每一个成员（方法），然后将每个方法的返回值根据方法名保存在 memberValues 中。在 parseAnnotations2 方法中，我们知道 parseAnnotation2 返回的是一个注解类型的实例，但是注解又是一个接口，如何根据注解的 Class 信息构造一个注解的实例呢？我们继续跟踪 annotationForMap 方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Annotation <span class="title">annotationForMap</span><span class="params">(<span class="keyword">final</span> Class&lt;? extends Annotation&gt; type,</span></span></span><br><span class="line"><span class="function"><span class="params">                                              <span class="keyword">final</span> Map&lt;String, Object&gt; memberValues)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> AccessController.doPrivileged(<span class="keyword">new</span> PrivilegedAction&lt;Annotation&gt;() &#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> Annotation <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> (Annotation) Proxy.newProxyInstance(</span><br><span class="line">                type.getClassLoader(), <span class="keyword">new</span> Class&lt;?&gt;[] &#123; type &#125;,</span><br><span class="line">                <span class="keyword">new</span> AnnotationInvocationHandler(type, memberValues));</span><br><span class="line">        &#125;&#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>终于看到了最终的逻辑</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(Annotation) Proxy.newProxyInstance(</span><br><span class="line">            type.getClassLoader(), <span class="keyword">new</span> Class&lt;?&gt;[] &#123; type &#125;,</span><br><span class="line">            <span class="keyword">new</span> AnnotationInvocationHandler(type, memberValues));</span><br></pre></td></tr></table></figure>
+<p>不得不说，动态代理在这个位置的使用很是巧妙啊，废话不多说，赶紧看下 AnnotationInvocationHandler </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">......</span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> </span>&#123;</span><br><span class="line">    String member = method.getName();</span><br><span class="line">    Class&lt;?&gt;[] paramTypes = method.getParameterTypes();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Handle Object and Annotation methods</span></span><br><span class="line">    <span class="keyword">if</span> (member.equals(<span class="string">"equals"</span>) &amp;&amp; paramTypes.length == <span class="number">1</span> &amp;&amp;</span><br><span class="line">        paramTypes[<span class="number">0</span>] == Object<span class="class">.<span class="keyword">class</span>)</span></span><br><span class="line">        return equalsImpl(args[0]);</span><br><span class="line">    <span class="keyword">assert</span> paramTypes.length == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (member.equals(<span class="string">"toString"</span>))</span><br><span class="line">        <span class="keyword">return</span> toStringImpl();</span><br><span class="line">    <span class="keyword">if</span> (member.equals(<span class="string">"hashCode"</span>))</span><br><span class="line">        <span class="keyword">return</span> hashCodeImpl();</span><br><span class="line">    <span class="keyword">if</span> (member.equals(<span class="string">"annotationType"</span>))</span><br><span class="line">        <span class="keyword">return</span> type;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Handle annotation member accessors</span></span><br><span class="line">    Object result = memberValues.get(member);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (result == <span class="keyword">null</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IncompleteAnnotationException(type, member);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (result <span class="keyword">instanceof</span> ExceptionProxy)</span><br><span class="line">        <span class="keyword">throw</span> ((ExceptionProxy) result).generateException();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (result.getClass().isArray() &amp;&amp; Array.getLength(result) != <span class="number">0</span>)</span><br><span class="line">        result = cloneArray(result);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+<p>这里只展示了核心的 invoke 方法，核心的逻辑就是根据方法的名称，从 memberValues 中去除前面保存的值，并返回。其他的逻辑就不做过多说明，感兴趣的同学可以自行研究下 AnnotationInvocationHandler 的源码。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文以方法的注解切入，从源码的角度去分析注解的实现细节。总结起来就是：使用动态代理生成注解实例，将注解的实例根据注解的 Class 保存在方法的 declaredAnnotations 变量中</p>
+<p>方法的注解实现原理比较清晰，但是彻底明白方法注解的实现需要对 Class 文件的结构以及动态代理的原理有比较清晰的理解。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/go/2020/05/05/design-pattern-mediator/" rel="next" title="中介者模式">
+                <i class="fa fa-chevron-left"></i> 中介者模式
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rockstore</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/go/archives%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/go/categories/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/go/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Demo-引入"><span class="nav-number">2.</span> <span class="nav-text">Demo 引入</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#深入"><span class="nav-number">3.</span> <span class="nav-text">深入</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#getDeclaredAnnotation"><span class="nav-number">3.1.</span> <span class="nav-text">getDeclaredAnnotation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#declaredAnnotations"><span class="nav-number">3.2.</span> <span class="nav-text">declaredAnnotations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#parseAnnotations"><span class="nav-number">3.3.</span> <span class="nav-text">parseAnnotations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#parseAnnotation2"><span class="nav-number">3.4.</span> <span class="nav-text">parseAnnotation2</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rockstore</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/go/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
