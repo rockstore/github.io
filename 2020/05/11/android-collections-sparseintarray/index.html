@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/go/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/go/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/go/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/go/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/go/images/favicon-32x32-next.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/go/images/favicon-16x16-next.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/go/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言  SparseArray  优化了  int  到  Object  键值对的存储，  SparseIntArray  优化了  int  到  int  键值对的存储。android中在键值对存储上的优化主要做了一下几种类型的优化:  int   –&gt;   Object  (SparseArray) int   –&gt;   int  (SparseIntArray) int">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android SparseIntArray">
+<meta property="og:url" content="https://rockstore.github.io/go/2020/05/11/android-collections-sparseintarray/index.html">
+<meta property="og:site_name" content="Rock">
+<meta property="og:description" content="前言  SparseArray  优化了  int  到  Object  键值对的存储，  SparseIntArray  优化了  int  到  int  键值对的存储。android中在键值对存储上的优化主要做了一下几种类型的优化:  int   –&gt;   Object  (SparseArray) int   –&gt;   int  (SparseIntArray) int">
+<meta property="og:image" content="https://raw.githubusercontent.com/rockstore/images/master/SparseIntArray_h.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/rockstore/images/master/SparseIntArray_s.png">
+<meta property="article:published_time" content="2020-05-11T13:07:03.000Z">
+<meta property="article:modified_time" content="2020-05-11T13:09:59.818Z">
+<meta property="article:author" content="rockstore">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/rockstore/images/master/SparseIntArray_h.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/go/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/11/android-collections-sparseintarray/"/>
+
+
+
+
+
+  <title>Android SparseIntArray | Rock</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/go/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Rock</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/go/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/go/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/go/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/11/android-collections-sparseintarray/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android SparseIntArray</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-11T21:07:03+08:00">
+                2020-05-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/" itemprop="url" rel="index">
+                    <span itemprop="name">android</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/collections/" itemprop="url" rel="index">
+                    <span itemprop="name">collections</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>  SparseArray  优化了  int  到  Object  键值对的存储，  SparseIntArray  优化了  int  到  int  键值对的存储。android中在键值对存储上的优化主要做了一下几种类型的优化:</p>
+<ul>
+<li>int   –&gt;   Object  (SparseArray)</li>
+<li>int   –&gt;   int  (SparseIntArray)</li>
+<li>int   –&gt;   boolean  (SparseBooleanArray)</li>
+<li>int   –&gt;   long  (SparseLongArray)</li>
+<li>int   –&gt;   Set  (SparseSetArray)</li>
+</ul>
+<p>SparseSetArray 目前在sdk中还处于hide状态，故在做总结的时候就不分析它了。</p>
+<p>之前已经分析过  SparseArray  ，本文就分析下  SparseIntArray  的实现，并在最后总结下这几种键值对在实现上的共同点。</p>
+<h2 id="继承结构"><a href="#继承结构" class="headerlink" title="继承结构"></a>继承结构</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/SparseIntArray_h.png" alt=""></p>
+<br>
+以上为  SparseIntArray  的继承体系。  SparseIntArray  只实现了  Cloneable  接口，结构比较简单。其实阅读源码可以发现，  SparseArray  ，  SparseIntArray  ，  SparseBooleanArray  ，  SparseLongArray  都只实现了  Cloneable  接口。
+
+<h2 id="存储结构"><a href="#存储结构" class="headerlink" title="存储结构"></a>存储结构</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/SparseIntArray_s.png" alt=""></p>
+<br>
+以上为  SparseIntArray  的存储结构，mKeys存储的是int类型的键，mValues存储的是int类型的value。
+
+<h2 id="元素查找"><a href="#元素查找" class="headerlink" title="元素查找"></a>元素查找</h2><pre><code>// 查找键key在mKeys的下标
+public int indexOfKey(int key) {
+    return ContainerHelpers.binarySearch(mKeys, mSize, key);
+}
+
+// 查找value在mValues的下标
+public int indexOfValue(int value) {
+    for (int i = 0; i &lt; mSize; i++)
+        if (mValues[i] == value)
+            return i;
+    return -1;
+}</code></pre><p>元素的查找分键查找和值查找，键查找使用二分查找，值查找直接使用循环遍历。</p>
+<h2 id="添加元素"><a href="#添加元素" class="headerlink" title="添加元素"></a>添加元素</h2><pre><code>public void put(int key, int value) {
+    int i = ContainerHelpers.binarySearch(mKeys, mSize, key);
+
+    if (i &gt;= 0) {
+        mValues[i] = value;
+    } else {
+        i = ~i;
+
+        mKeys = GrowingArrayUtils.insert(mKeys, mSize, i, key);
+        mValues = GrowingArrayUtils.insert(mValues, mSize, i, value);
+        mSize++;
+    }
+}</code></pre><p>添加元素首先使用二分查找找到key在mKeys数组的下标，也就是value在mValues数组的下标。如果   ContainerHelpers.binarySearch(mKeys, mSize, key)  在mKeys数组中没有找到key，则返回key待插入位置的下标的取反，如果找到了key，则直接更新mValues对应位置的值即可。<br>  GrowingArrayUtils.insert  函数的实现如下：</p>
+<pre><code>public static int[] insert(int[] array, int currentSize, int index, int element) {
+    assert currentSize &lt;= array.length;
+
+    if (currentSize + 1 &lt;= array.length) {
+        System.arraycopy(array, index, array, index + 1, currentSize - index);
+        array[index] = element;
+        return array;
+    }
+
+    int[] newArray = ArrayUtils.newUnpaddedIntArray(growSize(currentSize));
+    System.arraycopy(array, 0, newArray, 0, index);
+    newArray[index] = element;
+    System.arraycopy(array, index, newArray, index + 1, array.length - index);
+    return newArray;
+}</code></pre><p>函数的逻辑很简单，首先断言了currentSize &lt;= array.length；如果array在不需要扩大容量的情况下可以添加一个元素，则先将待插入位置index开始的元素整体后移一位，然后插入元素，否则先扩容，然后将元素拷贝到新的数组中。</p>
+<h2 id="删除元素"><a href="#删除元素" class="headerlink" title="删除元素"></a>删除元素</h2><pre><code>public void delete(int key) {
+    int i = ContainerHelpers.binarySearch(mKeys, mSize, key);
+    if (i &gt;= 0) {
+        removeAt(i);
+    }
+}
+
+public void removeAt(int index) {
+    System.arraycopy(mKeys, index + 1, mKeys, index, mSize - (index + 1));
+    System.arraycopy(mValues, index + 1, mValues, index, mSize - (index + 1));
+    mSize--;
+}</code></pre><p>删除元素主要涉及以上两个方法，  delete(int key)  根据  key  进行删除，  removeAt(int index)  删除指定下标的元素。这两个方法都是  public  ，故都可以直接使用。  delete(int key)  ，先使用二分查找，找到  key  在  mKeys  的下标，如果找到即  i &gt;= 0  ，则直接删除  mKeys  和  mValues  指定位置的元素。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>还有  SparseBooleanArray  ，  SparseLongArray  还没有分析，他们的实现规则是一样的，只是存储的数据类型的  mValues  数组是  boolean   和   long  ，接下来就对  SparseIntArray  ，  SparseBooleanArray  ，  SparseLongArray  进行下总结。</p>
+<ul>
+<li>他们的设计目的是优化  int  到  int  ,   boolean   ,  long  映射的存储</li>
+<li>使用  int  类型的数组  mKeys  存储映射的键，使用对应类型的数组  mValues  存储值</li>
+<li>int  类型的键在存储上是有顺序的</li>
+<li>在查找值时，先使用二分查找，在  mKeys  中查找值在  mValues  中的下标，然后返回值</li>
+</ul>
+<p>以上三种数据类型和  SparseArray  最大的区别在于  SparseArray  在删除元素的时候会将元素设置为  DELETED  ，后续会有  gc  的过程。</p>
+<p>相对于使用HashMap，这样的设计的优势和缺点：</p>
+<p><strong>优势：</strong></p>
+<ul>
+<li>避免  int  类型的键自动装箱</li>
+<li>相较于  HashMap  使用  Node  ，这样的设计使用更小的存储单元即可存储  key  到  value  的映射</li>
+</ul>
+<p><strong>缺点：</strong></p>
+<ul>
+<li>在进行元素查找时使用二分查找，元素较多（谷歌给出的数字是大于1000）时，查找效率较低</li>
+<li>在进行元素的添加和删除时，可能会频繁进行元素的移动，运行效率可能会降低</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/go/2020/05/11/android-collections-sparearray/" rel="next" title="Android SpareArray">
+                <i class="fa fa-chevron-left"></i> Android SpareArray
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/go/2020/05/11/android-collections-summary/" rel="prev" title="Android 容器总结">
+                Android 容器总结 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rockstore</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/go/archives%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/go/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/go/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#继承结构"><span class="nav-number">2.</span> <span class="nav-text">继承结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#存储结构"><span class="nav-number">3.</span> <span class="nav-text">存储结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#元素查找"><span class="nav-number">4.</span> <span class="nav-text">元素查找</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加元素"><span class="nav-number">5.</span> <span class="nav-text">添加元素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#删除元素"><span class="nav-number">6.</span> <span class="nav-text">删除元素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rockstore</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/go/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

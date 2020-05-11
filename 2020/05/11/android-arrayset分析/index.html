@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/go/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/go/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/go/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/go/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/go/images/favicon-32x32-next.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/go/images/favicon-16x16-next.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/go/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言一直在使用Set相关类进行运行时数据存储，之前也有知道 Android 为了更加有效的利用内存，在23的时候设计了自己的一套运行时的集合类。本文的以我的视角分析 ArraySet 的 add 和 remove 过程，并做了简单的对比分析。 结构  ArraySet 实现了 Set 和 Collections 接口，故 add 和 remove 接口的使用方式相同，就不在对这两个接口的使用提供示">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android ArraySet">
+<meta property="og:url" content="https://rockstore.github.io/go/2020/05/11/android-arrayset%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="Rock">
+<meta property="og:description" content="前言一直在使用Set相关类进行运行时数据存储，之前也有知道 Android 为了更加有效的利用内存，在23的时候设计了自己的一套运行时的集合类。本文的以我的视角分析 ArraySet 的 add 和 remove 过程，并做了简单的对比分析。 结构  ArraySet 实现了 Set 和 Collections 接口，故 add 和 remove 接口的使用方式相同，就不在对这两个接口的使用提供示">
+<meta property="og:image" content="http://p0.qhimg.com/t01ebc5f5688c918e20.png">
+<meta property="og:image" content="http://p0.qhimg.com/t01dbd3b0687f23f126.png">
+<meta property="og:image" content="http://p0.qhimg.com/t010b82f86211d13d60.png">
+<meta property="og:image" content="http://p0.qhimg.com/t013c2e659cc85b9bd9.png">
+<meta property="og:image" content="http://p0.qhimg.com/t01b06cfba9651c1e15.png">
+<meta property="og:image" content="http://p0.qhimg.com/t016e0b7bd024302aad.png">
+<meta property="article:published_time" content="2020-05-10T16:32:44.000Z">
+<meta property="article:modified_time" content="2020-05-11T12:51:30.264Z">
+<meta property="article:author" content="rockstore">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://p0.qhimg.com/t01ebc5f5688c918e20.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/go/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/11/android-arrayset分析/"/>
+
+
+
+
+
+  <title>Android ArraySet | Rock</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/go/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Rock</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/go/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/go/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/go/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/11/android-arrayset%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android ArraySet</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-11T00:32:44+08:00">
+                2020-05-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/" itemprop="url" rel="index">
+                    <span itemprop="name">android</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/collections/" itemprop="url" rel="index">
+                    <span itemprop="name">collections</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>一直在使用Set相关类进行运行时数据存储，之前也有知道 Android 为了更加有效的利用内存，在23的时候设计了自己的一套运行时的集合类。本文的以我的视角分析 ArraySet 的 add 和 remove 过程，并做了简单的对比分析。</p>
+<h2 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h2><p><img src="http://p0.qhimg.com/t01ebc5f5688c918e20.png" alt=""></p>
+<br>
+ArraySet 实现了 Set 和 Collections 接口，故 add 和 remove 接口的使用方式相同，就不在对这两个接口的使用提供示例。
+
+<h2 id="存储结构"><a href="#存储结构" class="headerlink" title="存储结构"></a>存储结构</h2><p><img src="http://p0.qhimg.com/t01dbd3b0687f23f126.png" alt=""></p>
+<br/> 
+ArraySet 在进行 add 和 remove 操作时，操作的是 int[] 类型的 mHashes 和 Object[] 类型的 mArray ，其中mHashes 保存 mArray 每个元素的 hash 值，且 mHashes 和 mArray 相同下标的元素一一对应。
+
+<h2 id="add"><a href="#add" class="headerlink" title="add"></a>add</h2><p><img src="http://p0.qhimg.com/t010b82f86211d13d60.png" alt=""></p>
+<br/>
+以上为add的流程，可以概括为以下几点：
+
+<ul>
+<li><p>判断元素是否存在，已存在则直接返回<br>indexOf 函数判断待插入元素是否存在，如果存在，则直接返回元素在 mArray 的下标，如果不存在，则返回带插入元素即将插入的位置的取反 </p>
+</li>
+<li><p>判断是否需要对存储元素的数组进行扩容<br>ArraySet 使用 mSize 记录当前元素的数量，如果 mSize &gt;= mHashes.length (元素的数量大于等于数组的长度)，则需要对数组进行扩容，则计算扩容后的容量，扩容的规则会后续说明。扩容过程中还会涉及到的缓存也会后续说明。</p>
+</li>
+<li><p>根据元素插入的位置判断是否需要对数组元素进行移动<br>如果数组中不存在待插入元素，则在第一步中会计算出带插入元素待插入位置的取反，此不会再次取反，获得真实待插入的位置 index 。如果 index &lt; mSize (插入位置不在数组末尾)，则需要将 index+1 只 mSize - 1 位置的元素后移一位。</p>
+</li>
+<li><p>插入元素<br>将待插入元素本身和其hash值分别插入到 mArray 和 mHashes 的 index 位置</p>
+</li>
+</ul>
+<h2 id="remove"><a href="#remove" class="headerlink" title="remove"></a>remove</h2><p><img src="http://p0.qhimg.com/t013c2e659cc85b9bd9.png" alt=""></p>
+<br>
+remove得流程可以概括如下：
+
+<ul>
+<li>判断元素是否存在，如果不存在则直接返回</li>
+<li>如果当前元素小于等于1，则将mHashes和mArray置空，否则会进行扩容判断判断</li>
+<li>如果需要进行扩容，则计算扩容后的容量，扩容过程中涉及到的缓存处理会后续说明，扩容完成后会将原来数组中的元素copy到新数组中</li>
+<li>扩容完成后，执行将index至mSize-1的元素前移一位，删除待删除元素</li>
+</ul>
+<h2 id="indexOf"><a href="#indexOf" class="headerlink" title="indexOf"></a>indexOf</h2><p>indexOf函数功能是查找元素在mArray中的位置，在add和remove操作过程中都涉及到查找元素的过程。看下这个函数的实现</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">private int indexOf(Object key, int hash) &#123;</span><br><span class="line">    final int N &#x3D; mSize;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Important fast case: if nothing is in here, nothing to look for.</span><br><span class="line">    if (N &#x3D;&#x3D; 0) &#123;</span><br><span class="line">        return ~0;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    int index &#x3D; ContainerHelpers.binarySearch(mHashes, N, hash);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; If the hash code wasn&#39;t found, then we have no entry for this key.</span><br><span class="line">    if (index &lt; 0) &#123;</span><br><span class="line">        return index;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; If the key at the returned index matches, that&#39;s what we want.</span><br><span class="line">    if (key.equals(mArray[index])) &#123;</span><br><span class="line">        return index;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; Search for a matching key after the index.</span><br><span class="line">    int end;</span><br><span class="line">    for (end &#x3D; index + 1; end &lt; N &amp;&amp; mHashes[end] &#x3D;&#x3D; hash; end++) &#123;</span><br><span class="line">        if (key.equals(mArray[end])) return end;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Search for a matching key before the index.</span><br><span class="line">    for (int i &#x3D; index - 1; i &gt;&#x3D; 0 &amp;&amp; mHashes[i] &#x3D;&#x3D; hash; i--) &#123;</span><br><span class="line">        if (key.equals(mArray[i])) return i;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Key not found -- return negative value indicating where a</span><br><span class="line">    &#x2F;&#x2F; new entry for this key should go.  We use the end of the</span><br><span class="line">    &#x2F;&#x2F; hash chain to reduce the number of array entries that will</span><br><span class="line">    &#x2F;&#x2F; need to be copied when inserting.</span><br><span class="line">    return ~end;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>indexOf函数的实现比较简单，首先会判断当前元素数量是否为0，如果是0，则直接返回-1，否则使用二分查找ContainerHelpers.binarySearch(mHashes, N, hash)获取元素的位置index。ContainerHelpers.binarySearch的代码比较简单，就不分析了。如果待查找元element素和mArray[index]相同，表示元素已经找到，直接返回index。若element未找到，则使用end记录如果将element插入mArray时的位置。</p>
+<p>可以发现，indexOf函数有两个作用：</p>
+<ul>
+<li>查找element在mArray中的位置</li>
+<li>若element在mArray中不存在，则返回将element插入mArray中的位置的取反。</li>
+</ul>
+<h2 id="resize"><a href="#resize" class="headerlink" title="resize"></a>resize</h2><p>ArraySet中没有resize函数，这里的resize表示ArraySet在add和remove时可能会执行的扩容操作，这里的扩容可能是增加容量，也可能是缩小容量。接下来会分别分下add和remove过程中涉及到的扩容操作。</p>
+<h3 id="add扩容"><a href="#add扩容" class="headerlink" title="add扩容"></a>add扩容</h3><p>add过程中，如果mSize &gt;= mHashes.length(元素的数量大于等于数组的长度)，则数组(mHashes和mArray)需要进行扩容，扩容规则如下</p>
+<pre><code>private static final int BASE_SIZE = 4;
+
+final int n = mSize &gt;= (BASE_SIZE * 2) ? (mSize + (mSize &gt;&gt; 1))
+            : (mSize &gt;= BASE_SIZE ? (BASE_SIZE * 2) : BASE_SIZE);</code></pre><p>BASE_SIZE是ArraySet扩容的最小增量，已经经过Google工程师验证过，BASE_SIZE = 4时，内存的使用效率最高。根据以上的扩容规则，假设我们使用ArraySet mSet = new ArraySet()的方式新建了一个ArraySet对象，mHashes和mArray的长度大小变化如下：</p>
+<p><img src="http://p0.qhimg.com/t01b06cfba9651c1e15.png" alt=""></p>
+<p>上图中，mSize表示mHashes和mArray中元素的数量，length表示mHashes和mArray的长度。</p>
+<h3 id="remove缩容"><a href="#remove缩容" class="headerlink" title="remove缩容"></a>remove缩容</h3><p>remove的过程中ArraySet会根据一定的规则对mHashes和mArray的大小进行缩小，缩小规则如下：</p>
+<pre><code>if (mHashes.length &gt; (BASE_SIZE * 2) &amp;&amp; mSize &lt; mHashes.length / 3) {
+    final int n = mSize &gt; (BASE_SIZE * 2) ? (mSize + (mSize &gt;&gt; 1)) : (BASE_SIZE * 2);
+    ......
+}</code></pre><p>缩容的规则比扩容稍微简单一些，数组mHashes和mArray长度是一样的，故缩容的条件可理解为：</p>
+<ul>
+<li>mHashes和mArray长度大于BASE_SIZE * 2</li>
+<li>mHashes和mArray中元素的数量小于数组长度的1/3</li>
+</ul>
+<p>缩容之后数组mHashes和mArray的长度：</p>
+<pre><code>n = mSize &gt; (BASE_SIZE * 2) ? (mSize + (mSize &gt;&gt; 1)) : (BASE_SIZE * 2);</code></pre><p>可以发现，缩容之后，mHashes和mArray的长度最小为BASE_SIZE * 2</p>
+<h2 id="缓存"><a href="#缓存" class="headerlink" title="缓存"></a>缓存</h2><p>在add过程中，如果需要扩容，需要走如下逻辑：</p>
+<pre><code>final int[] ohashes = mHashes;
+final Object[] oarray = mArray;
+allocArrays(n);
+......
+freeArrays(ohashes, oarray, mSize);</code></pre><p>在remove过程中，如果需要缩容，则需要走如下逻辑：</p>
+<pre><code>final int[] ohashes = mHashes;
+final Object[] oarray = mArray;
+allocArrays(n);</code></pre><p>以上两段代码中n表示计算后数组的容量。在add的扩容和remove的缩容过程中，都会调用allocArray，可以看下具体实现，代码可能比较长，但不是很复杂</p>
+<pre><code>private void allocArrays(final int size) {
+    if (size == (BASE_SIZE * 2)) {
+        synchronized (ArraySet.class) {
+            if (sTwiceBaseCache != null) {
+                final Object[] array = sTwiceBaseCache;
+                try {
+                    mArray = array;
+                    sTwiceBaseCache = (Object[]) array[0];
+                    mHashes = (int[]) array[1];
+                    array[0] = array[1] = null;
+                    sTwiceBaseCacheSize--;
+                    if (DEBUG) {
+                        Log.d(TAG, &quot;Retrieving 2x cache &quot; + mHashes + &quot; now have &quot;
+                                + sTwiceBaseCacheSize + &quot; entries&quot;);
+                }
+                return;
+                } catch (ClassCastException e) {
+                }
+                // Whoops!  Someone trampled the array (probably due to not protecting
+                // their access with a lock).  Our cache is corrupt; report and give up.
+                Slog.wtf(TAG, &quot;Found corrupt ArraySet cache: [0]=&quot; + array[0]
+                        + &quot; [1]=&quot; + array[1]);
+                sTwiceBaseCache = null;
+                sTwiceBaseCacheSize = 0;
+            }
+        }
+    } else if (size == BASE_SIZE) {
+        synchronized (ArraySet.class) {
+            if (sBaseCache != null) {
+                final Object[] array = sBaseCache;
+                try {
+                    mArray = array;
+                    sBaseCache = (Object[]) array[0];
+                    mHashes = (int[]) array[1];
+                    array[0] = array[1] = null;
+                    sBaseCacheSize--;
+                    if (DEBUG) {
+                        Log.d(TAG, &quot;Retrieving 1x cache &quot; + mHashes + &quot; now have &quot; + sBaseCacheSize
+                                + &quot; entries&quot;);
+                    }
+                    return;
+                } catch (ClassCastException e) {
+                }
+                // Whoops!  Someone trampled the array (probably due to not protecting
+                // their access with a lock).  Our cache is corrupt; report and give up.
+                Slog.wtf(TAG, &quot;Found corrupt ArraySet cache: [0]=&quot; + array[0]
+                        + &quot; [1]=&quot; + array[1]);
+                sBaseCache = null;
+                sBaseCacheSize = 0;
+            }
+        }
+    }
+
+    mHashes = new int[size];
+    mArray = new Object[size];
+}</code></pre><p>如果不考虑缓存部分，直接到函数的最后，可以发现，allocArray函数其实就是根据计算出来的长度，新建了mHashes和mArray数组。再看下缓存部分，Google设计了两个节点，BASE_SIZE和BASE_SIZE * 2，如果计算后数组的容量是以上两个节点，则尝试从缓存中给mHashes和mArray赋值。至于为什么不设置其他的节点，个人猜测，可能是Google认为这两个节点是数组在变化过程中会经常到达的点；也可能是认为如果缓存其他节点，缓存的数组过长，对内存的消耗较大。</p>
+<p>说了这么多缓存，这个缓存究竟是什么结构呢，这个缓存是如何被赋值的呢？我们先给出这个缓存的结构，然后在分析freeArray中分析缓存的赋值。</p>
+<p><img src="http://p0.qhimg.com/t016e0b7bd024302aad.png" alt=""></p>
+<p>以上就是缓存的结构，sBaseCache和sTwiceBaseCache指向的节点称为缓存节点，sBaseCache和sTwiceBaseCache指向的是最新的缓存节点，这样的缓存节点最多有CACHE_SIZE = 10个。每个缓存节点都是一个Object类型的数组，index = 0的元素指向下一个缓存节点，index = 1的元素指向缓存的mHashes的数组。</p>
+<p>接下来看下在释放数组的时候，freeArray函数是如何给缓存赋值的</p>
+<pre><code>private static void freeArrays(final int[] hashes, final Object[] array, final int size) {
+    if (hashes.length == (BASE_SIZE * 2)) {
+        synchronized (ArraySet.class) {
+            if (sTwiceBaseCacheSize &lt; CACHE_SIZE) {
+                array[0] = sTwiceBaseCache;
+                array[1] = hashes;
+                for (int i = size - 1; i &gt;= 2; i--) {
+                    array[i] = null;
+                }
+                sTwiceBaseCache = array;
+                sTwiceBaseCacheSize++;
+                if (DEBUG) {
+                    Log.d(TAG, &quot;Storing 2x cache &quot; + array + &quot; now have &quot; + sTwiceBaseCacheSize
+                            + &quot; entries&quot;);
+                }
+            }
+        }
+    } else if (hashes.length == BASE_SIZE) {
+        synchronized (ArraySet.class) {
+            if (sBaseCacheSize &lt; CACHE_SIZE) {
+                array[0] = sBaseCache;
+                array[1] = hashes;
+                for (int i = size - 1; i &gt;= 2; i--) {
+                    array[i] = null;
+                }
+                sBaseCache = array;
+                sBaseCacheSize++;
+                if (DEBUG) {
+                    Log.d(TAG, &quot;Storing 1x cache &quot; + array + &quot; now have &quot;
+                            + sBaseCacheSize + &quot; entries&quot;);
+                }
+            }
+        }
+    }
+}</code></pre><p>上面的代码看着很多，逻辑理解起来相对比较简单的，在释放数组的size为4或者8的时候，会首先判断缓存节点的数量是否已经超过CACHE_SIZE，如果没有超过，则将待释放的array作为一个缓存节点，array[0]指向目前最新的节点，array[1]指向待释放的hashes数组，然后调整sBaseCache / sTwiceBaseCache指向array。这就是freeArray添加缓存节点或者说设置缓存的流程。</p>
+<p>再回顾下前面的allocArray, 如果从最新的缓存节点中给mHashes和mArray赋值，sBaseCache / sTwiceBaseCache调整自己的指向，指向上一个缓存节点。</p>
+<p><strong>在添加缓存节点的时候，有这样的逻辑一直在引起我的关注</strong></p>
+<pre><code>for (int i = size - 1; i &gt;= 2; i--) {
+    array[i] = null;
+}</code></pre><p>这段逻辑如果仔细分析，可以发现Google程序员考虑的真的很周全。我们在freeArray的时候，函数中传递的array是数组，这个数组指向的是Object[]类型的mArray，也就是说函数参数中的array和mArray指向的是同一块内存区域，array中每一个元素和mArray中每个元素引用同样的内存区域。如果没有array[i] = null这一步逻辑，每一个缓存节点从2号为元素开始，都会引用mArray对应节点指向的内存区域。</p>
+<p>猜测可能会产生两个后果：</p>
+<ul>
+<li>由于数组mArray指向的内存区域存在过多的引用，其他程序可能会使用这些引用修改缓存，引起缓存异常</li>
+<li>虚拟机中普遍采用可达性分析的方式计算内存是否可以被回收，在判断时，会沿着GC Root搜索，如果对象在以GC Root为根的链上，则对象不能被回收。如果没有array[i] = null，则随着缓存的增加，mArray指向的对象增加大量的引用，可能会影响虚拟机的内存回收</li>
+</ul>
+<p><strong>补充一下</strong><br>虚拟机中使用可达性分析的方式来判断对象所占用的空间是否需要回收。使用可达性分析的时候，虚拟机会从GC Root开始往下搜索，搜索的过程中，会形成一条引用链，如果某个对象在引用链上，则此对象还在存活不能被回收。可以作为GC Root的对象包括下面几种：</p>
+<ul>
+<li>虚拟机栈中引用的对象</li>
+<li>方法区中静态属性引用的对象</li>
+<li>方法区中常亮引用的属性</li>
+<li>本地方法栈中应用的对象。</li>
+</ul>
+<p><strong>以上有关虚拟机的内容，可参考《深入理解Java虚拟机》第二版，3.2.2节相关内容。此部分的分析没有经过验证，大家有验证方式可以回复我一下。</strong></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>根据Google官方的说明，ArraySet的设计是为了更加有效的利用内存，它的对比目标是HashSet，HashSet的实现底层是HashMap，故ArraySet实际上就是和HashMap进行对比。既然说ArraySet可以更加有效利用内存，有效在那些方面呢？接下来就对比下优势和劣势。</p>
+<p><strong>优势：</strong></p>
+<ul>
+<li>ArraySet使用更少的存储单元存储元素<br>ArraySet使用int类型的数组存储hash，使用Object类型数组存储元素，相较于HashMap使用Node存储节点，ArraySet存储一个元素占用的内存更小。</li>
+<li>ArraySet在扩容时容量变化更小<br>HashMap在扩容的时候，往往会对原来的容量扩大一倍，而ArraySet在元素超过8之后，只会增加元素个数的1/2，在扩容过程中更省内存空间。</li>
+</ul>
+<p><strong>劣势</strong></p>
+<ul>
+<li>存储大量元素（超过1000）时比较耗时<br>相较于HashMap使用hash算法直接找到数组下标，然后从该下表的元素往后搜索，ArraySet在查找元素时需要进行二分查找，如果数组元素数量过多(超过1000)，可能比较耗时。</li>
+<li>在扩容和缩容时可能会频繁移动元素<br>ArraySet在扩容和缩容时需要移动元素，且扩容时容量变化比HashMap小，扩容和缩容的频率可能更高，元素数量过多时，元素的移动可能会对性能产生影响。</li>
+</ul>
+<p>Google给出了提示，如果元素的数量少于1000，性能最多降低50%。</p>
+<h2 id="建议"><a href="#建议" class="headerlink" title="建议"></a>建议</h2><p>对程序员来说，Read The Fucking Source Code才能真正了解其中的原理，文章以我的视角分析了ArraySet，可能有些分析并不能满足需求，建议各位去Read The Fucking Source Code，同时也帮我检查看有没有问题。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/go/2020/05/11/android-arraymap%E5%88%86%E6%9E%90/" rel="next" title="Android ArrayMap">
+                <i class="fa fa-chevron-left"></i> Android ArrayMap
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/go/2020/05/11/android-collections-sparearray/" rel="prev" title="Android SpareArray">
+                Android SpareArray <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rockstore</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/go/archives%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/go/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/go/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结构"><span class="nav-number">2.</span> <span class="nav-text">结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#存储结构"><span class="nav-number">3.</span> <span class="nav-text">存储结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#add"><span class="nav-number">4.</span> <span class="nav-text">add</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#remove"><span class="nav-number">5.</span> <span class="nav-text">remove</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#indexOf"><span class="nav-number">6.</span> <span class="nav-text">indexOf</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#resize"><span class="nav-number">7.</span> <span class="nav-text">resize</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#add扩容"><span class="nav-number">7.1.</span> <span class="nav-text">add扩容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#remove缩容"><span class="nav-number">7.2.</span> <span class="nav-text">remove缩容</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缓存"><span class="nav-number">8.</span> <span class="nav-text">缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">9.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建议"><span class="nav-number">10.</span> <span class="nav-text">建议</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rockstore</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/go/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
