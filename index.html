@@ -238,6 +238,440 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/12/android-framework-battery-sys-promote/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/12/android-framework-battery-sys-promote/" itemprop="url">Android 系统尝试耗电的措施</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-12T23:16:31+08:00">
+                2020-05-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/" itemprop="url" rel="index">
+                    <span itemprop="name">android</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/framework/" itemprop="url" rel="index">
+                    <span itemprop="name">framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/framework/%E8%80%97%E7%94%B5%E5%88%86%E6%9E%90/" itemprop="url" rel="index">
+                    <span itemprop="name">耗电分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>为了提高电池寿命，减少耗电，Android 系统在不断进行优化，本文只是简单的记录 Android6.0 到 Android 9.0 系统为了优化耗电所做的工作，并没有做过多的分析，如果需要看相关的详情，可以到官网查看。</p>
+<h2 id="Android-6"><a href="#Android-6" class="headerlink" title="Android 6"></a>Android 6</h2><h3 id="Doze-低耗电模式"><a href="#Doze-低耗电模式" class="headerlink" title="Doze 低耗电模式"></a>Doze 低耗电模式</h3><ul>
+<li>进入条件</li>
+</ul>
+<p>用户未插接设备的电源，在屏幕关闭且静止的情况下，让设备在一段时间内保持不活动状态，那么设备就会进入低电耗模式</p>
+<ul>
+<li>限制</li>
+</ul>
+<p>在低电耗模式下，系统会尝试通过限制应用访问占用大量网络和 CPU 资源的服务来节省电量。它还会阻止应用访问网络，并延迟其作业、同步和标准闹钟。</p>
+<p>（1）暂停访问网络。</p>
+<p>（2）系统忽略唤醒锁定。</p>
+<p>（3）标准 AlarmManager 闹钟（包括 setExact() 和 setWindow()）推迟到下一个维护期。</p>
+<p>a）如果您需要设置在设备处于低电耗模式时触发的闹钟，请使用 setAndAllowWhileIdle() 或 setExactAndAllowWhileIdle()。</p>
+<p>b）使用 setAlarmClock() 设置的闹钟将继续正常触发，系统会在这些闹钟触发之前不久退出低电耗模式。</p>
+<p>（4）系统不执行 WLAN 扫描。</p>
+<p>（5）系统不允许运行同步适配器。</p>
+<p>（6）系统不允许运行 JobScheduler。</p>
+<h3 id="应用待机模式"><a href="#应用待机模式" class="headerlink" title="应用待机模式"></a>应用待机模式</h3><ul>
+<li>进入条件</li>
+</ul>
+<p>应用待机模式允许系统判定应用在用户未主动使用它时是否处于闲置状态。当用户有一段时间未触摸应用时，系统便会作出此判定。</p>
+<ul>
+<li>退出和限制</li>
+</ul>
+<p>当用户将设备插入电源时，系统会从待机状态释放应用，允许它们自由访问网络并执行任何待处理的作业和同步。如果设备长时间处于闲置状态，系统将允许闲置应用访问网络，频率大约每天一次。</p>
+<ul>
+<li>排除条件</li>
+</ul>
+<p>（1）用户明确启动应用。</p>
+<p>（2）应用当前有一个进程在前台运行（作为活动或前台服务，或者正在由其他活动或前台服务使用）。<br>注意：您只能将前台服务用于用户希望系统立即执行或不中断的任务。此类情况包括将照片上传到社交媒体，或者即使在音乐播放器应用不在前台运行时也能播放音乐。您不应该只是为了阻止系统判定您的应用处于闲置状态而启动前台服务。</p>
+<p>（3）应用生成用户可在锁定屏幕或通知栏中看到的通知。</p>
+<p>（4）应用是正在使用中的设备管理应用（例如设备策略控制器）。虽然设备管理应用通常在后台运行，但永远不会进入应用待机模式，因为它们必须保持可用性，以便随时从服务器接收策略。</p>
+<h2 id="Android-7"><a href="#Android-7" class="headerlink" title="Android 7"></a>Android 7</h2><h3 id="增强了-Doze"><a href="#增强了-Doze" class="headerlink" title="增强了 Doze"></a>增强了 Doze</h3><p>通过在设备未插接电源且屏幕关闭状态下、但不一定要处于静止状态（例如用户外出时把手持式设备装在口袋里）时应用部分 CPU 和网络限制，进一步增强了低电耗模式。</p>
+<ul>
+<li>限制</li>
+</ul>
+<p>当设备处于充电状态且屏幕已关闭一定时间后，设备会进入低电耗模式并应用第一部分限制：关闭应用网络访问、推迟作业和同步。如果进入低电耗模式后设备处于静止状态达到一定时间，系统则会对 PowerManager.WakeLock、AlarmManager 闹铃、GPS 和 WLAN 扫描应用余下的低电耗模式限制。无论是应用部分还是全部低电耗模式限制，系统都会唤醒设备以提供简短的维护时间窗口，在此窗口期间，应用程序可以访问网络并执行任何被推迟的作业/同步。</p>
+<h3 id="移除了三项隐式广播"><a href="#移除了三项隐式广播" class="headerlink" title="移除了三项隐式广播"></a>移除了三项隐式广播</h3><p>CONNECTIVITY_ACTION<br>对于 target 7.0 的应用，通过静态注册的广播，无法接收到  CONNECTIVITY_ACTION 广播；应用无法接收到 ACTION_NEW_PICTURE 或 ACTION_NEW_VIDEO 的广播</p>
+<h2 id="Android-8"><a href="#Android-8" class="headerlink" title="Android 8"></a>Android 8</h2><h3 id="后台执行限制"><a href="#后台执行限制" class="headerlink" title="后台执行限制"></a>后台执行限制</h3><p>（1）前台应用</p>
+<p>a）具有可见 Activity（不管该 Activity 已启动还是已暂停）。</p>
+<p>b）具有前台 Service。</p>
+<p>c）另一个前台应用已关联到该应用（不管是通过绑定到其中一个 Service，还是通过使用其中一个内容提供程序）。 例如，如果另一个应用绑定到该应用的 Service，那么该应用处于前台：<br>IME<br>壁纸 Service<br>通知侦听器<br>语音或文本 Service</p>
+<ul>
+<li>限制</li>
+</ul>
+<p>处于前台时，应用可以自由创建和运行前台与后台 Service。 进入后台时，在一个持续数分钟的时间窗内，应用仍可以创建和使用 Service。 在该时间窗结束后，应用将被视为处于空闲状态。 此时，系统将停止应用的后台 Service，就像应用已经调用 Service 的 Service.stopSelf() 方法一样。</p>
+<p>在这些情况下，后台应用将被置于一个临时白名单中并持续数分钟。 位于白名单中时，应用可以无限制地启动 Service，并且其后台 Service 也可以运行。</p>
+<h3 id="后台位置限制"><a href="#后台位置限制" class="headerlink" title="后台位置限制"></a>后台位置限制</h3><p>降低了后台应用接收位置更新的频率</p>
+<h3 id="升级隐式广播限制"><a href="#升级隐式广播限制" class="headerlink" title="升级隐式广播限制"></a>升级隐式广播限制</h3><ul>
+<li>限制</li>
+</ul>
+<p>（1）适配 Android 8.0 或更高版本的应用无法继续在其清单中为隐式广播注册广播接收器。 隐式广播是一种不专门针对该应用的广播。 例如，ACTION_PACKAGE_REPLACED 就是一种隐式广播，因为该广播将被发送给所有已注册侦听器，让后者知道设备上的某些软件包已被替换。 不过，ACTION_MY_PACKAGE_REPLACED 不是隐式广播，因为不管已为该广播注册侦听器的其他应用有多少，它都会只被发送给软件包已被替换的应用。</p>
+<p>（2）应用可以继续在它们的清单中注册显式广播。</p>
+<p>（3）应用可以在运行时使用 Context.registerReceiver() 为任意广播（不管是隐式还是显式）注册接收器。</p>
+<p>（4）需要签名权限的广播不受此限制所限，因为这些广播只会发送到使用相同证书签名的应用，而不是发送到设备上的所有应用。</p>
+<p>以下链接可以查看隐式广播的例外<br><a href="https://developer.android.com/guide/components/broadcast-exceptions" target="_blank" rel="noopener">https://developer.android.com/guide/components/broadcast-exceptions</a></p>
+<h2 id="Android-9"><a href="#Android-9" class="headerlink" title="Android 9"></a>Android 9</h2><h3 id="电源管理"><a href="#电源管理" class="headerlink" title="电源管理"></a>电源管理</h3><h4 id="应用待机群组"><a href="#应用待机群组" class="headerlink" title="应用待机群组"></a>应用待机群组</h4><p>Android 9 引入了一项新的电池管理功能，即应用待机群组。 应用待机群组可以基于应用最近使用时间和使用频率，帮助系统排定应用请求资源的优先级。 根据使用模式，每个应用都会归类到五个优先级群组之一中。 系统将根据应用所属的群组限制每个应用可以访问的设备资源</p>
+<p>五个群组按照以下特性将应用分组：</p>
+<p><strong>活跃</strong></p>
+<p>如果用户当前正在使用应用，应用将被归到“活跃”群组中，例如：</p>
+<ul>
+<li>应用已启动一个 Activity</li>
+<li>应用正在运行前台服务</li>
+<li>应用的同步适配器与某个前台应用使用的 content provider 关联</li>
+<li>用户在应用中点击了某个通知</li>
+</ul>
+<p>如果应用处于“活跃”群组，系统不会对应用的作业、报警或 FCM 消息施加任何限制。</p>
+<p><strong>工作集</strong></p>
+<p>如果应用经常运行，但当前未处于活跃状态，它将被归到“工作集”群组中。 例如，用户在大部分时间都启动的某个社交媒体应用可能就属于“工作集”群组。 如果应用被间接使用，它们也会被升级到“工作集”群组中 。</p>
+<p>如果应用处于“工作集”群组，系统会对它运行作业和触发报警的能力施加轻度限制。 如需了解详细信息，请参阅电源管理限制。</p>
+<p>常用<br>如果应用会定期使用，但不是每天都必须使用，它将被归到“常用”群组中。 例如，用户在健身房运行的某个锻炼跟踪应用可能就属于“常用”群组。</p>
+<p>如果应用处于“常用”群组，系统将对它运行作业和触发报警的能力施加较强的限制，也会对高优先级 FCM 消息的数量设定限制。 如需了解详细信息，请参阅电源管理限制。</p>
+<p>极少使用<br>如果应用不经常使用，那么它属于“极少使用”群组。 例如，用户仅在入住酒店期间运行的酒店应用就可能属于“极少使用”群组。</p>
+<p>如果应用处于“极少使用”群组，系统将对它运行作业、触发警报和接收高优先级 FCM 消息的能力施加严格限制。系统还会限制应用连接到网络的能力。 如需了解详细信息，请参阅电源管理限制。</p>
+<p>从未使用<br>安装但是从未运行过的应用会被归到“从未使用”群组中。 系统会对这些应用施加极强的限制。</p>
+<p>以下链接可以查看电源管理限制<br><a href="https://developer.android.com/topic/performance/power/power-details" target="_blank" rel="noopener">https://developer.android.com/topic/performance/power/power-details</a></p>
+<h4 id="省电模式改进"><a href="#省电模式改进" class="headerlink" title="省电模式改进"></a>省电模式改进</h4><p>开启省电模式后，系统会对所有应用施加限制。 这是一项已有的功能，但在 Android 9 中得到了改进</p>
+<h3 id="后台对传感器的访问受限"><a href="#后台对传感器的访问受限" class="headerlink" title="后台对传感器的访问受限"></a>后台对传感器的访问受限</h3><p>Android 9 限制后台应用访问用户输入和传感器数据的能力。 如果您的应用在运行 Android 9 设备的后台运行，系统将对您的应用采取以下限制：</p>
+<ul>
+<li>您的应用不能访问麦克风或摄像头。</li>
+<li>使用连续报告模式的传感器（例如加速度计和陀螺仪）不会接收事件。</li>
+<li>使用变化或一次性报告模式的传感器不会接收事件。</li>
+</ul>
+<p>如果您的应用需要在运行 Android 9 的设备上检测传感器事件，请使用前台服务。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/11/android-framework-battery-app/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/11/android-framework-battery-app/" itemprop="url">Android App 耗电计算</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-11T22:27:08+08:00">
+                2020-05-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/" itemprop="url" rel="index">
+                    <span itemprop="name">android</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/framework/" itemprop="url" rel="index">
+                    <span itemprop="name">framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/framework/%E8%80%97%E7%94%B5%E5%88%86%E6%9E%90/" itemprop="url" rel="index">
+                    <span itemprop="name">耗电分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Android 中对组件的耗电时间统计是由 BatteryStatusService 完成的，真正完成耗时统计的是类 BatteryStatsImpl 类。系统耗电排行中显示的耗电信息是通过 BatteryStatsHelper 类中相关的函数完成的。后面会分别分析 App 耗电和 硬件耗电，本文首先分析 App 耗电。</p>
+<h2 id="耗电计算"><a href="#耗电计算" class="headerlink" title="耗电计算"></a>耗电计算</h2><p>App 耗电也称软件耗电，分别统计不同应用的耗电情况，系统通过 BatterStatsHelper 的 processAppUsage 函数，去更新不同应用的耗电信息，然后显示其排行。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">processAppUsage</span><span class="params">(SparseArray&lt;UserHandle&gt; asUsers)</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> iu = <span class="number">0</span>; iu &lt; NU; iu++) &#123;</span><br><span class="line">		<span class="comment">// 统计每一个应用的耗电信息</span></span><br><span class="line">        <span class="keyword">final</span> Uid u = uidStats.valueAt(iu);</span><br><span class="line">        <span class="keyword">final</span> BatterySipper app = <span class="keyword">new</span> BatterySipper(BatterySipper.DrainType.APP, u, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// CPU </span></span><br><span class="line">        mCpuPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// WakeLock</span></span><br><span class="line">        mWakelockPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// 移动网络</span></span><br><span class="line">        mMobileRadioPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs,</span><br><span class="line">                mStatsType);</span><br><span class="line">		<span class="comment">// wifi</span></span><br><span class="line">        mWifiPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// 蓝牙</span></span><br><span class="line">        mBluetoothPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs,</span><br><span class="line">                mStatsType);</span><br><span class="line">		<span class="comment">// 传感器</span></span><br><span class="line">        mSensorPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// 相机</span></span><br><span class="line">        mCameraPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// 闪光灯</span></span><br><span class="line">        mFlashlightPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs,</span><br><span class="line">                mStatsType);</span><br><span class="line">		<span class="comment">// 多媒体</span></span><br><span class="line">        mMediaPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">        <span class="comment">// 统计总的耗电</span></span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">double</span> totalPower = app.sumPower();</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有 Uid 类，可以将这个类的实例理解为一个应用， processAppUsage 函数循环遍历每一个应用，分别统计不同应用不同组件的耗电。每一个应用会分别计算应用的 CPU，Wakelock，移动网络，wifi，传感器，相机，闪光灯，多媒体的耗电情况，最后将这些组件的耗电相加便得到了应用的总耗电，前面已经分析过，Android 计算耗电实际上就是计算不同组件在不同状态的工作时间，下面在分析不同组件的耗电，也是沿着这样的思路。在分析每一个组件的耗电，只会列出最核心的代码，</p>
+<h2 id="组件耗电"><a href="#组件耗电" class="headerlink" title="组件耗电"></a>组件耗电</h2><h3 id="CPU"><a href="#CPU" class="headerlink" title="CPU"></a>CPU</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">            <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">        app.cpuTimeMs = (u.getUserCpuTimeUs(statsType) + u.getSystemCpuTimeUs(statsType)) / <span class="number">1000</span>;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> numClusters = mProfile.getNumCpuClusters();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">double</span> cpuPowerMaUs = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> cluster = <span class="number">0</span>; cluster &lt; numClusters; cluster++) &#123;</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">int</span> speedsForCluster = mProfile.getNumSpeedStepsInCpuCluster(cluster);</span><br><span class="line">            <span class="comment">// 计算不同主频下 CPU 的耗电</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> speed = <span class="number">0</span>; speed &lt; speedsForCluster; speed++) &#123;</span><br><span class="line">                <span class="keyword">final</span> <span class="keyword">long</span> timeUs = u.getTimeAtCpuSpeed(cluster, speed, statsType);</span><br><span class="line">                <span class="keyword">final</span> <span class="keyword">double</span> cpuSpeedStepPower = timeUs *</span><br><span class="line">                        mProfile.getAveragePowerForCpuCore(cluster, speed);</span><br><span class="line">                <span class="keyword">if</span> (DEBUG) &#123;</span><br><span class="line">                    Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": CPU cluster #"</span> + cluster + <span class="string">" step #"</span></span><br><span class="line">                            + speed + <span class="string">" timeUs="</span> + timeUs + <span class="string">" power="</span></span><br><span class="line">                            + BatteryStatsHelper.makemAh(cpuSpeedStepPower / MICROSEC_IN_HR));</span><br><span class="line">                &#125;</span><br><span class="line">                cpuPowerMaUs += cpuSpeedStepPower;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        cpuPowerMaUs += u.getCpuActiveTime() * <span class="number">1000</span> * mProfile.getAveragePower(</span><br><span class="line">                PowerProfile.POWER_CPU_ACTIVE);</span><br><span class="line">        <span class="keyword">long</span>[] cpuClusterTimes = u.getCpuClusterTimes();</span><br><span class="line">        <span class="comment">// 计算各个 Cluster 的平均耗电</span></span><br><span class="line">        <span class="keyword">if</span> (cpuClusterTimes != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (cpuClusterTimes.length == numClusters) &#123;</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; numClusters; i++) &#123;</span><br><span class="line">                    <span class="keyword">double</span> power =</span><br><span class="line">                            cpuClusterTimes[i] * <span class="number">1000</span> * mProfile.getAveragePowerForCpuCluster(i);</span><br><span class="line">                    cpuPowerMaUs += power;</span><br><span class="line">                    <span class="keyword">if</span> (DEBUG) &#123;</span><br><span class="line">                        Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": CPU cluster #"</span> + i + <span class="string">" clusterTimeUs="</span></span><br><span class="line">                                + cpuClusterTimes[i] + <span class="string">" power="</span></span><br><span class="line">                                + BatteryStatsHelper.makemAh(power / MICROSEC_IN_HR));</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                Log.w(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">" CPU cluster # mismatch: Power Profile # "</span></span><br><span class="line">                        + numClusters + <span class="string">" actual # "</span> + cpuClusterTimes.length);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        app.cpuPowerMah = cpuPowerMaUs / MICROSEC_IN_HR;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，CPU 耗电计算了 CPU 在不同核心在不同主频下的耗电，并将这些耗电相加。</p>
+<h3 id="Wakelock"><a href="#Wakelock" class="headerlink" title="Wakelock"></a>Wakelock</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> wakeLockTimeUs = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">final</span> ArrayMap&lt;String, ? extends BatteryStats.Uid.Wakelock&gt; wakelockStats =</span><br><span class="line">            u.getWakelockStats();</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> wakelockStatsCount = wakelockStats.size();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; wakelockStatsCount; i++) &#123;</span><br><span class="line">        <span class="keyword">final</span> BatteryStats.Uid.Wakelock wakelock = wakelockStats.valueAt(i);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Only care about partial wake locks since full wake locks</span></span><br><span class="line">        <span class="comment">// are canceled when the user turns the screen off.</span></span><br><span class="line">        BatteryStats.Timer timer = wakelock.getWakeTime(BatteryStats.WAKE_TYPE_PARTIAL);</span><br><span class="line">        <span class="keyword">if</span> (timer != <span class="keyword">null</span>) &#123;</span><br><span class="line">            wakeLockTimeUs += timer.getTotalTimeLocked(rawRealtimeUs, statsType);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    app.wakeLockTimeMs = wakeLockTimeUs / <span class="number">1000</span>; <span class="comment">// convert to millis</span></span><br><span class="line">    mTotalAppWakelockTimeMs += app.wakeLockTimeMs;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Add cost of holding a wake lock.</span></span><br><span class="line">    app.wakeLockPowerMah = (app.wakeLockTimeMs * mPowerWakelock) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    <span class="keyword">if</span> (DEBUG &amp;&amp; app.wakeLockPowerMah != <span class="number">0</span>) &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": wake "</span> + app.wakeLockTimeMs</span><br><span class="line">                + <span class="string">" power="</span> + BatteryStatsHelper.makemAh(app.wakeLockPowerMah));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Wakelock 的耗电逻辑比叫简单，但是这里有一个需要注意的位置，在统计 Wakelock 的耗电时，仅仅统计了 PARTIAL 类型的 Wakelock 的耗时，这就给我们使用 Wakelock 的策略提供了思路。</p>
+<h3 id="移动网络"><a href="#移动网络" class="headerlink" title="移动网络"></a>移动网络</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Add cost of mobile traffic.</span></span><br><span class="line">    app.mobileRxPackets = u.getNetworkActivityPackets(BatteryStats.NETWORK_MOBILE_RX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.mobileTxPackets = u.getNetworkActivityPackets(BatteryStats.NETWORK_MOBILE_TX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.mobileActive = u.getMobileRadioActiveTime(statsType) / <span class="number">1000</span>;</span><br><span class="line">    app.mobileActiveCount = u.getMobileRadioActiveCount(statsType);</span><br><span class="line">    app.mobileRxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_MOBILE_RX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.mobileTxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_MOBILE_TX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (app.mobileActive &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// We are tracking when the radio is up, so can use the active time to</span></span><br><span class="line">        <span class="comment">// determine power use.</span></span><br><span class="line">        mTotalAppMobileActiveMs += app.mobileActive;</span><br><span class="line">        app.mobileRadioPowerMah = (app.mobileActive * mPowerRadioOn) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// We are not tracking when the radio is up, so must approximate power use</span></span><br><span class="line">        <span class="comment">// based on the number of packets.</span></span><br><span class="line">        app.mobileRadioPowerMah = (app.mobileRxPackets + app.mobileTxPackets)</span><br><span class="line">                * getMobilePowerPerPacket(rawRealtimeUs, statsType);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (DEBUG &amp;&amp; app.mobileRadioPowerMah != <span class="number">0</span>) &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": mobile packets "</span></span><br><span class="line">                + (app.mobileRxPackets + app.mobileTxPackets)</span><br><span class="line">                + <span class="string">" active time "</span> + app.mobileActive</span><br><span class="line">                + <span class="string">" power="</span> + BatteryStatsHelper.makemAh(app.mobileRadioPowerMah));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>无线电耗电的计算分两种情况，如果 mobileActive &gt; 0 即 无线电处于 active 状态时，直接使用无线电处于 active 的时间乘以无线电在 active 时的功率 mPowerRadioOn 即可，如果未处于 active ，则使用收发的数据包数量乘以收发数据包的平均功率。</p>
+<h3 id="wifi"><a href="#wifi" class="headerlink" title="wifi"></a>wifi</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> BatteryStats.ControllerActivityCounter counter = u.getWifiControllerActivity();</span><br><span class="line">    <span class="keyword">if</span> (counter == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// wifi 处于空闲的时间</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> idleTime = counter.getIdleTimeCounter().getCountLocked(statsType);</span><br><span class="line">    <span class="comment">// wifi 发送数据包的时间</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> txTime = counter.getTxTimeCounters()[<span class="number">0</span>].getCountLocked(statsType);</span><br><span class="line">    <span class="comment">// wifi 接收数据包的时间</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> rxTime = counter.getRxTimeCounter().getCountLocked(statsType);</span><br><span class="line">    <span class="comment">// wifi 总运行时间</span></span><br><span class="line">    app.wifiRunningTimeMs = idleTime + rxTime + txTime;</span><br><span class="line">    mTotalAppRunningTime += app.wifiRunningTimeMs;</span><br><span class="line">    <span class="comment">// wifi 的总耗电</span></span><br><span class="line">    app.wifiPowerMah =</span><br><span class="line">            ((idleTime * mIdleCurrentMa) + (txTime * mTxCurrentMa) + (rxTime * mRxCurrentMa))</span><br><span class="line">            / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    mTotalAppPowerDrain += app.wifiPowerMah;</span><br><span class="line"></span><br><span class="line">    app.wifiRxPackets = u.getNetworkActivityPackets(BatteryStats.NETWORK_WIFI_RX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.wifiTxPackets = u.getNetworkActivityPackets(BatteryStats.NETWORK_WIFI_TX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.wifiRxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_WIFI_RX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.wifiTxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_WIFI_TX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (DEBUG &amp;&amp; app.wifiPowerMah != <span class="number">0</span>) &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": idle="</span> + idleTime + <span class="string">"ms rx="</span> + rxTime + <span class="string">"ms tx="</span> +</span><br><span class="line">                txTime + <span class="string">"ms power="</span> + BatteryStatsHelper.makemAh(app.wifiPowerMah));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>wifi 的工作状态氛围空闲 idle，发送数据包 tx，接收数据包 如下，wifi 耗电的计算也分别计算了 wifi 在空闲，发送数据包和接收数据包时的耗电，最后计算了 wifi 收发的数据包。</p>
+<h3 id="蓝牙"><a href="#蓝牙" class="headerlink" title="蓝牙"></a>蓝牙</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.ControllerActivityCounter counter = u.getBluetoothControllerActivity();</span><br><span class="line">    <span class="keyword">if</span> (counter == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> idleTimeMs = counter.getIdleTimeCounter().getCountLocked(statsType);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> rxTimeMs = counter.getRxTimeCounter().getCountLocked(statsType);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> txTimeMs = counter.getTxTimeCounters()[<span class="number">0</span>].getCountLocked(statsType);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> totalTimeMs = idleTimeMs + txTimeMs + rxTimeMs;</span><br><span class="line">    <span class="keyword">double</span> powerMah = counter.getPowerCounter().getCountLocked(statsType)</span><br><span class="line">            / (<span class="keyword">double</span>)(<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (powerMah == <span class="number">0</span>) &#123;</span><br><span class="line">        powerMah = ((idleTimeMs * mIdleMa) + (rxTimeMs * mRxMa) + (txTimeMs * mTxMa))</span><br><span class="line">                / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    app.bluetoothPowerMah = powerMah;</span><br><span class="line">    app.bluetoothRunningTimeMs = totalTimeMs;</span><br><span class="line">    app.btRxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_BT_RX_DATA, statsType);</span><br><span class="line">    app.btTxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_BT_TX_DATA, statsType);</span><br><span class="line"></span><br><span class="line">    mAppTotalPowerMah += powerMah;</span><br><span class="line">    mAppTotalTimeMs += totalTimeMs;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>蓝牙耗电的计算和 wifi 类似，蓝牙的工作状态也分为空闲 idle ，发送 tx，接收 rx，在计算蓝牙耗电时也分别计算了蓝牙在 idle ，tx，rx 时的耗电，最后将这些耗电进行相加。</p>
+<h3 id="传感器"><a href="#传感器" class="headerlink" title="传感器"></a>传感器</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Process Sensor usage</span></span><br><span class="line">    <span class="keyword">final</span> SparseArray&lt;? extends BatteryStats.Uid.Sensor&gt; sensorStats = u.getSensorStats();</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> NSE = sensorStats.size();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> ise = <span class="number">0</span>; ise &lt; NSE; ise++) &#123;</span><br><span class="line">        <span class="keyword">final</span> BatteryStats.Uid.Sensor sensor = sensorStats.valueAt(ise);</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> sensorHandle = sensorStats.keyAt(ise);</span><br><span class="line">        <span class="keyword">final</span> BatteryStats.Timer timer = sensor.getSensorTime();</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> sensorTime = timer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">switch</span> (sensorHandle) &#123;</span><br><span class="line">            <span class="keyword">case</span> BatteryStats.Uid.Sensor.GPS:</span><br><span class="line">                app.gpsTimeMs = sensorTime;</span><br><span class="line">                app.gpsPowerMah = (app.gpsTimeMs * mGpsPower) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">final</span> <span class="keyword">int</span> sensorsCount = mSensors.size();</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; sensorsCount; i++) &#123;</span><br><span class="line">                    <span class="keyword">final</span> Sensor s = mSensors.get(i);</span><br><span class="line">                    <span class="keyword">if</span> (s.getHandle() == sensorHandle) &#123;</span><br><span class="line">                        app.sensorPowerMah += (sensorTime * s.getPower()) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里传感器耗电分为两种：GPS ，其他传感器，GPS 的耗电记录在 PowerProfile.xml 文件中，保存在 mGpsPower 中，其他传感器的计算根据SensorManager得到所有传感器类型，这个里面保存有不同传感器的单位耗电量，这样就能计算不同传感器的耗电量。</p>
+<h3 id="相机"><a href="#相机" class="headerlink" title="相机"></a>相机</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Calculate camera power usage.  Right now, this is a (very) rough estimate based on the</span></span><br><span class="line">    <span class="comment">// average power usage for a typical camera application.</span></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.Timer timer = u.getCameraTurnedOnTimer();</span><br><span class="line">    <span class="keyword">if</span> (timer != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> totalTime = timer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line">        app.cameraTimeMs = totalTime;</span><br><span class="line">        app.cameraPowerMah = (totalTime * mCameraPowerOnAvg) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        app.cameraTimeMs = <span class="number">0</span>;</span><br><span class="line">        app.cameraPowerMah = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>相机的耗电首先计算出相机工作的时间，然后乘以相机的平均耗电。</p>
+<h3 id="闪光灯"><a href="#闪光灯" class="headerlink" title="闪光灯"></a>闪光灯</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Calculate flashlight power usage.  Right now, this is based on the average power draw</span></span><br><span class="line">    <span class="comment">// of the flash unit when kept on over a short period of time.</span></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.Timer timer = u.getFlashlightTurnedOnTimer();</span><br><span class="line">    <span class="keyword">if</span> (timer != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> totalTime = timer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line">        app.flashlightTimeMs = totalTime;</span><br><span class="line">        app.flashlightPowerMah = (totalTime * mFlashlightPowerOnAvg) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        app.flashlightTimeMs = <span class="number">0</span>;</span><br><span class="line">        app.flashlightPowerMah = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>闪光灯的耗电和相机类似，先计算相机工作的时间，然后乘以相机的平均耗电。</p>
+<h3 id="多媒体"><a href="#多媒体" class="headerlink" title="多媒体"></a>多媒体</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Calculate audio power usage, an estimate based on the average power routed to different</span></span><br><span class="line">    <span class="comment">// components like speaker, bluetooth, usb-c, earphone, etc.</span></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.Timer audioTimer = u.getAudioTurnedOnTimer();</span><br><span class="line">    <span class="keyword">if</span> (audioTimer == <span class="keyword">null</span>) &#123;</span><br><span class="line">        app.audioTimeMs = <span class="number">0</span>;</span><br><span class="line">        app.audioPowerMah = <span class="number">0</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> totalTime = audioTimer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line">        app.audioTimeMs = totalTime;</span><br><span class="line">        app.audioPowerMah = (totalTime * mAudioAveragePowerMa) / MS_IN_HR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Calculate video power usage.</span></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.Timer videoTimer = u.getVideoTurnedOnTimer();</span><br><span class="line">    <span class="keyword">if</span> (videoTimer == <span class="keyword">null</span>) &#123;</span><br><span class="line">        app.videoTimeMs = <span class="number">0</span>;</span><br><span class="line">        app.videoPowerMah = <span class="number">0</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> totalTime = videoTimer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line">        app.videoTimeMs = totalTime;</span><br><span class="line">        app.videoPowerMah = (totalTime * mVideoAveragePowerMa) / MS_IN_HR;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>多媒体耗电分别计算音频和视频的耗电，耗电的计算方法和闪光灯和相机类似，分别计算出工作时间，然后乘以平均能耗。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Android App 耗电的分析初步写完了。其实耗电的计算也没有那么复杂，和我们平时生活中的耗电计算的思路是相同的，唯一不同的是这里计算的是移动设备。</p>
+<p>Android 系统中，不同组件的耗电功率数据通过记录在文件 PowerProfile.xml 文件中，PowerProfile.xml 文件是进行耗电分析的基础，如果这个文件的数据有问题，那么我们的分析结果就是有问题，这也提醒我们，一些小的或者不知名的厂商，他们的耗电数据可能是不准确的。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/11/android-collections-summary/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2203,450 +2637,6 @@ public V put(K key, V value) {
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-mediator/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="rockstore">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/go/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Rock">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/go/2020/05/05/design-pattern-mediator/" itemprop="url">中介者模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T10:07:46+08:00">
-                2020-05-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="中介者模式"><a href="#中介者模式" class="headerlink" title="中介者模式"></a>中介者模式</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>包装了一系列对象相互作用的方式，使得这些对象不必相互明显引用，从而使他们可以较松散的耦合，当这些对象中的某些对象之间相互发生作用发生改变时，不会理解影响到其他的一些对象之间的相互作用，从而保证这些相互作用可以彼此独立地变化。</p>
-<h2 id="场景分析"><a href="#场景分析" class="headerlink" title="场景分析"></a>场景分析</h2><p>上面的定义很官方，其实生活中，中介者模式离我们最近的应该就是房产中介了，卖房者将房子挂在房屋中介，购买者通过房屋中介得到房屋信息，然后通过中介达成最后的交易。如何更加形象地去理解呢，先看下下面这张图</p>
-<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/un_mediator.png" alt=""></p>
-<p>可以看到，存在 A - D 五个对象，他们之间存在相互作用，他们之间的耦合关系使得修改某一个对象的行为时，可能会印象其他对象的行为。出现上述问题的根本原因是这五个对象之间是直接相互依赖，如果换一种方式会不会好些呢？</p>
-<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/mediator_optimize.png" alt=""></p>
-<p>这样修改之后的好处也是十分明显，最显著的优点，对象之间的直接依赖被解除了，对象之间依赖关系的复杂性被大大降低，某个对象的修改之后，如果对其他对象有影响，直接修改中介者即可。以上使用的就是中介者模式的思想。</p>
-<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/mediator.png" alt=""></p>
-<p>如上图所示，中介者模式涉及到四种角色：</p>
-<ul>
-<li><p>Mediator 抽象中介者</p>
-<p>抽象中介者定义了各同事之间的通信接口</p>
-</li>
-<li><p>ConcreteMediator 具体中介者</p>
-<p>协调各同事之间的通信写作行为，同时持有同事对象的引用</p>
-</li>
-<li><p>Colleague 抽象同事类</p>
-<p>定义各个同时的方法，同时持有中介者对象的引用，同事之间可以通过持有的中介者对象的引用进行相互通信写作</p>
-</li>
-<li><p>ConcreteColleague 具体同事类</p>
-<p>具体同事类实现了抽象同事类的方法</p>
-</li>
-</ul>
-<h2 id="一般实现"><a href="#一般实现" class="headerlink" title="一般实现"></a>一般实现</h2><p>抽象中介者</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Mediator</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">changeState</span><span class="params">(Colleague colleague)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>抽象同事</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Colleague</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> Mediator mediator;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Colleague</span><span class="params">(Mediator mediator)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		<span class="keyword">this</span>.mediator = mediator;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">changeState</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (mediator != <span class="keyword">null</span>) &#123;</span><br><span class="line">			mediator.changeState(<span class="keyword">this</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span></span>;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>抽象同事持有中介者对象 mediator，并定义了 operation 函数</p>
-<p>具体同事 ColleagueA</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ColleagueA</span> <span class="keyword">extends</span> <span class="title">Colleague</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ColleagueA</span><span class="params">(Mediator mediator)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">super</span>(mediator);</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ColleagueB has changed its state!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在本 Demo 中，只有 ColleagueA 和 ColleagueB，ColleagueA 和 ColleagueB 通过中介者沟通，ColleagueA 收到 ColleagueB 状态发生变化后，在 operation 函数中输出提示字符串，ColleagueB 也是如此。</p>
-<p>具体中介者</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteMediator</span> <span class="keyword">extends</span> <span class="title">Mediator</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> Colleague colleagueA;</span><br><span class="line">	<span class="keyword">private</span> Colleague colleagueB;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setColleagueA</span><span class="params">(ColleagueA colleagueA)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.colleagueA = colleagueA;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setColleagueB</span><span class="params">(ColleagueB colleagueB)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.colleagueB = colleagueB;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">changeState</span><span class="params">(Colleague colleague)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">if</span> (colleague <span class="keyword">instanceof</span> ColleagueA &amp;&amp; colleagueB != <span class="keyword">null</span>) &#123;</span><br><span class="line">			colleagueB.operation();</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (colleague <span class="keyword">instanceof</span> ColleagueB &amp;&amp; colleagueA != <span class="keyword">null</span>) &#123;</span><br><span class="line">			colleagueA.operation();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试代码</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">ConcreteMediator mediator = <span class="keyword">new</span> ConcreteMediator();</span><br><span class="line">ColleagueA colleagueA = <span class="keyword">new</span> ColleagueA(mediator);</span><br><span class="line">ColleagueB colleagueB = <span class="keyword">new</span> ColleagueB(mediator);</span><br><span class="line">mediator.setColleagueA(colleagueA);</span><br><span class="line">mediator.setColleagueB(colleagueB);</span><br><span class="line"></span><br><span class="line">colleagueA.changeState();</span><br><span class="line">colleagueB.changeState();</span><br></pre></td></tr></table></figure>
-
-<p>程序运行结果如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ColleagueA has changes its state!!</span><br><span class="line">ColleagueB has changed its state!!</span><br></pre></td></tr></table></figure>
-
-<h2 id="中介者在-Android-中的使用"><a href="#中介者在-Android-中的使用" class="headerlink" title="中介者在 Android 中的使用"></a>中介者在 Android 中的使用</h2><p>此部分参考了《Android源码设计模式 实战与分析》一书。Android 源码中实现锁屏功能的源码 KeyguardViewMediator.java 就是中介者模式。锁屏对应移动设备的用户来说，只是一个很简单的操作，点下 按钮即可，但是对于系统来说，锁屏功能的实现会涉及很多子系统。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">KeyguardViewMediator</span> <span class="keyword">extends</span> <span class="title">SystemUI</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">private</span> AlarmManager mAlarmManager;</span><br><span class="line">    <span class="keyword">private</span> AudioManager mAudioManager;</span><br><span class="line">    <span class="keyword">private</span> StatusBarManager mStatusBarManager;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">private</span> PowerManager mPM;</span><br><span class="line">    <span class="keyword">private</span> TrustManager mTrustManager;</span><br><span class="line">    <span class="keyword">private</span> StatusBarKeyguardViewManager mStatusBarKeyguardViewManager;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>以上是 KeyguardViewMediator 类的部分代码，有很多其他的系统功能对象，这些对象需要组合在一起才能完成锁屏状态的各种操作，以解锁时播放声音为例，KeyguardViewMediator 函数 playSounds 完成解锁时声音的播放</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">playSounds</span><span class="params">(<span class="keyword">boolean</span> locked)</span> </span>&#123;</span><br><span class="line">        playSound(locked ? mLockSoundId : mUnlockSoundId);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">playSound</span><span class="params">(<span class="keyword">int</span> soundId)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (soundId == <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">        <span class="keyword">final</span> ContentResolver cr = mContext.getContentResolver();</span><br><span class="line">        <span class="keyword">if</span> (Settings.System.getInt(cr, Settings.System.LOCKSCREEN_SOUNDS_ENABLED, <span class="number">1</span>) == <span class="number">1</span>) &#123;</span><br><span class="line"></span><br><span class="line">            mLockSounds.stop(mLockSoundStreamId);</span><br><span class="line">            <span class="comment">// Init mAudioManager</span></span><br><span class="line">            <span class="keyword">if</span> (mAudioManager == <span class="keyword">null</span>) &#123;</span><br><span class="line">                mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);</span><br><span class="line">                <span class="keyword">if</span> (mAudioManager == <span class="keyword">null</span>) <span class="keyword">return</span>;</span><br><span class="line">                mUiSoundsStreamType = mAudioManager.getUiSoundsStreamType();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            mUiOffloadThread.submit(() -&gt; &#123;</span><br><span class="line">                <span class="comment">// If the stream is muted, don't play the sound</span></span><br><span class="line">                <span class="keyword">if</span> (mAudioManager.isStreamMute(mUiSoundsStreamType)) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">int</span> id = mLockSounds.play(soundId,</span><br><span class="line">                        mLockSoundVolume, mLockSoundVolume, <span class="number">1</span><span class="comment">/*priortiy*/</span>, <span class="number">0</span><span class="comment">/*loop*/</span>, <span class="number">1.0f</span><span class="comment">/*rate*/</span>);</span><br><span class="line">                <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">                    mLockSoundStreamId = id;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>如上所示，KeyguardViewMediator 作为协调者，通过调用 没AudioManager 的相关接口完成了解锁时声音播放的操作。</p>
-<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><p>中介者模式的有点十分明显，将多对多转换为一对多，减小了同事类之间的耦合，使得同事类之间可以独立地使用，同事类的关系易于理解和维护。</p>
-<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><p>一对多的关系可能会导致中介者责任过大，中介者出现异常可能会导致同事类之间的交互出现异常；中介者模式可能会被滥用，大多数场景中，同事类之间的关系不会复杂到网状结构，不需要引入中介者模式，如果强行使用中介者模式，不仅会增加设计的复杂，也会让原本简单的业务逻辑变得复杂。</p>
-<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><p>对象之间的交互操作很多，且这些操作存在彼此依赖，当这些依赖关系已经达到网状时，为了防止一个对象的修改影响其他对象之间的相互操作，可以采用中介者模式减少或者降低耦合关系。</p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2>
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-watcher/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="rockstore">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/go/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Rock">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/go/2020/05/05/design-pattern-watcher/" itemprop="url">观察者模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T10:06:21+08:00">
-                2020-05-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="观察者模式"><a href="#观察者模式" class="headerlink" title="观察者模式"></a>观察者模式</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>相对于其他模式，观察者模式很容易理解，观察者模式又叫发布订阅模式，定义了被观察者和观察者之间一对多的关系，被观察者由于某种原因发生变化时，所有的观察者都会根据这种变化做出对应的行为</p>
-<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/observe.png" alt=""></p>
-<p>从 UML 可以看到观察者模式涉及到四个角色：</p>
-<ul>
-<li><p>Obserable 抽象被观察者角色</p>
-<p>抽象被观察者角色持有观察者实例的集合，并提供添加和删除观察者的接口</p>
-</li>
-<li><p>ConcreteObservable 具体被观察者角色</p>
-<p>具体被观察者角色负责维护被观察者的状态，当状态发生变化时通知观察者执行 update 方法</p>
-</li>
-<li><p>Observer 抽象观察者角色</p>
-<p>定义观察者需要实现的接口，当具体被观察者维护的状态发生变化时，将通过此接口通知观察者</p>
-</li>
-<li><p>ConcreteObserver 具体观察者角色</p>
-<p>实现抽象观察者定义的接口，处理具体被观察者角色发出的状态变化</p>
-</li>
-</ul>
-<p>在日常开发中，往往不会将抽象被观察者和具体被观察者进行区分，最后就只有 被观察者角色，抽象观察者角色，具体观察者角色。</p>
-<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/simple-observer.png" alt=""></p>
-<h2 id="简单实现"><a href="#简单实现" class="headerlink" title="简单实现"></a>简单实现</h2><p>抽象观察者</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">update</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>具体观察者</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteObserverA</span> <span class="keyword">implements</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteObserverA updates"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteObserverB</span> <span class="keyword">implements</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteObserverB updates"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>抽象被观察者</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> ArrayList&lt;Observer&gt; observers = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(Observer observer)</span> </span>&#123;</span><br><span class="line">		observers.add(observer);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">(Observer observer)</span> </span>&#123;</span><br><span class="line">		observers.remove(observer);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> ArrayList&lt;Observer&gt; <span class="title">getObservers</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> observers;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>具体被观察者</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteSubject</span> <span class="keyword">extends</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> state = <span class="number">0</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setState</span><span class="params">(<span class="keyword">int</span> newState)</span> </span>&#123;</span><br><span class="line">		state = newState;</span><br><span class="line">		change();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">change</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (Observer observer : getObservers()) &#123;</span><br><span class="line">			observer.update();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">		ConcreteSubject concreteSubject = <span class="keyword">new</span> ConcreteSubject();</span><br><span class="line">		concreteSubject.add(<span class="keyword">new</span> ConcreteObserverA());</span><br><span class="line">		concreteSubject.add(<span class="keyword">new</span> ConcreteObserverB());</span><br><span class="line">		concreteSubject.setState(<span class="number">1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ConcreteSubject concreteSubject = <span class="keyword">new</span> ConcreteSubject();</span><br><span class="line">concreteSubject.add(<span class="keyword">new</span> ConcreteObserverA());</span><br><span class="line">concreteSubject.add(<span class="keyword">new</span> ConcreteObserverB());</span><br><span class="line">concreteSubject.setState(<span class="number">1</span>);</span><br></pre></td></tr></table></figure>
-
-<p>测试代码运行结果</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ConcreteObserverA updates</span><br><span class="line">ConcreteObserverB updates</span><br></pre></td></tr></table></figure>
-
-<p>上述的观察者模式简单实现是我们纯手打，其实 jdk 也已经提供了观察者框架，很简洁很简单。jdk 中的观察者模式需要我们关注两个类：</p>
-<ul>
-<li><p>Observer</p>
-<p>抽象观察者，定义了如下的观察者接口</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span>   o     the observable object.</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span>   arg   an argument passed to the &lt;code&gt;notifyObservers&lt;/code&gt;</span></span><br><span class="line"><span class="comment">     *                 method.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">update</span><span class="params">(Observable o, Object arg)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>Observable</p>
-<p>被观察者，其实我们可以将其理解为前面提到的抽象被观察者角色，里面提供了观察者添加和删除方法，并保存了具体观察者的集合。</p>
-</li>
-</ul>
-<p>接下来我们使用 jdk 提供的框架实现一个简单的观察者 Demo。</p>
-<p>首先定义具体观察者</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ObserverA</span> <span class="keyword">implements</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">(Observable o, Object arg)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ObserverA updates:"</span> + o + <span class="string">" args:"</span> + arg);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ObserverB</span> <span class="keyword">implements</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">(Observable o, Object arg)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ObserverA updates:"</span> + o + <span class="string">" args:"</span> + arg);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>定义具体被观察者角色，具体</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyObservable</span> <span class="keyword">extends</span> <span class="title">Observable</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		setChanged();</span><br><span class="line">		notifyObservers(<span class="string">"1234"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MyObservable myObservable = <span class="keyword">new</span> MyObservable();</span><br><span class="line">myObservable.addObserver(<span class="keyword">new</span> ObserverA());</span><br><span class="line">myObservable.addObserver(<span class="keyword">new</span> ObserverB());</span><br><span class="line">myObservable.update();</span><br></pre></td></tr></table></figure>
-
-<p>运行结果如下</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ObserverA updates:com.apm.windseeker.observer_injava.MyObservable@<span class="number">15</span>db9742 args:<span class="number">1234</span></span><br><span class="line">ObserverA updates:com.apm.windseeker.observer_injava.MyObservable@<span class="number">15</span>db9742 args:<span class="number">1234</span></span><br></pre></td></tr></table></figure>
-
-<p>相较于我们自己实现的观察者， jdk 观察者框架在通知具体观察者进行更新时，将具体被观察者的对象一起传了过去。感兴趣的同学可以看下 jdk 观察者的实现，代码很少，在下面的分析中还会涉及到 jdk 中的观察者框架</p>
-<h2 id="推模型和拉模型"><a href="#推模型和拉模型" class="headerlink" title="推模型和拉模型"></a>推模型和拉模型</h2><p>在使用观察者模式的时候，我们很少去关注观察者模式使用的是推模型还是拉模型，因为我们已经习惯于使用推模型了，什么是推模型，什么是拉模型呢？</p>
-<p>推模型，拉模型是相对于被观察者来说的，如果被观察者在通知观察者时，直接将内容告知观察者，也就是在执行观察者的 update 方法时， update 里的参数就是被观察者需要告知观察者的内容，这样的实现模型叫做推模型，在推模型中，观察者仅仅是被动接受被观察者传过来的参数，使用推模型的前提是我们能确保所有的观察者都关注同样的内容。如果不同观察者关注的内容不一样，那该怎么处理呢，看下面的一个场景</p>
-<p>有这样一个系统，系统中包含传感器以及子模块，传感器负责收集空气湿度，温度等信息，不同的子模块可会根据不同的状态做出不同的处理：子模块 A 仅仅是输出当前湿度信息，子模块 B 在温度低于 30 摄氏度时仅仅是输出温度信息，高于 30 摄氏度时需要输出风速信息。</p>
-<p>不同模块需要的信息不同，且相同模块在不同状态下需要的信息也不相同，推模型显然已经无法满足需求，先看下实现</p>
-<p>抽象子模块：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Submodule</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">update</span><span class="params">(Sensor sensor)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>传感器：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.apm.windseeker.observer_injava;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Sensor</span> </span>&#123;</span><br><span class="line">	<span class="comment">// 温度</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> temperature;</span><br><span class="line">	<span class="comment">// 湿度</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> humidity;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> ArrayList&lt;Submodule&gt; submodules = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addSubmodule</span><span class="params">(Submodule submodule)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (submodule != <span class="keyword">null</span>) &#123;</span><br><span class="line">			submodules.add(submodule);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">removeSubmodule</span><span class="params">(Submodule submodule)</span> </span>&#123;</span><br><span class="line">		submodules.remove(submodule);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">notifySubmodule</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (Submodule submodule : submodules) &#123;</span><br><span class="line">			submodule.update(<span class="keyword">this</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">changeState</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		notifySubmodule();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">updateTemperature</span><span class="params">(<span class="keyword">int</span> newTemperature)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (temperature != newTemperature) &#123;</span><br><span class="line">			temperature = newTemperature;</span><br><span class="line">			changeState();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">updateHumidity</span><span class="params">(<span class="keyword">int</span> newHumidity)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (humidity != newHumidity) &#123;</span><br><span class="line">			humidity = newHumidity;</span><br><span class="line">			changeState();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getTemperature</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> temperature;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getHumidity</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> humidity;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>子模块 A</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SubmoduleA</span> <span class="keyword">implements</span> <span class="title">Submodule</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">(Sensor sensor)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Sensor state changes, current humidity:"</span> + sensor.getHumidity());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>子模块 B</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SubmoduleB</span> <span class="keyword">implements</span> <span class="title">Submodule</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">(Sensor sensor)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">if</span> (sensor.getTemperature() &lt; <span class="number">30</span>) &#123;</span><br><span class="line">			System.out.println(<span class="string">"temperature &lt; 30, current temperature:"</span> + sensor.getTemperature());</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			System.out.println(<span class="string">"temperature &gt;= 30, current temperature:"</span> + sensor.getTemperature() + <span class="string">",current humidity:"</span> + sensor.getHumidity());</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Sensor sensor = <span class="keyword">new</span> Sensor();</span><br><span class="line">sensor.addSubmodule(<span class="keyword">new</span> SubmoduleB());</span><br><span class="line">sensor.addSubmodule(<span class="keyword">new</span> SubmoduleA());</span><br><span class="line">sensor.updateHumidity(<span class="number">1</span>);</span><br><span class="line">System.out.println();</span><br><span class="line">sensor.updateTemperature(<span class="number">20</span>);</span><br><span class="line">System.out.println();</span><br><span class="line">sensor.updateTemperature(<span class="number">40</span>);</span><br></pre></td></tr></table></figure>
-
-<p>运行结果：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">temperature &lt; <span class="number">30</span>, current temperature:<span class="number">0</span></span><br><span class="line">Sensor state changes, current humidity:<span class="number">1</span></span><br><span class="line"></span><br><span class="line">temperature &lt; <span class="number">30</span>, current temperature:<span class="number">20</span></span><br><span class="line">Sensor state changes, current humidity:<span class="number">1</span></span><br><span class="line"></span><br><span class="line">temperature &gt;= <span class="number">30</span>, current temperature:<span class="number">40</span>,current humidity:<span class="number">1</span></span><br><span class="line">Sensor state changes, current humidity:<span class="number">1</span></span><br></pre></td></tr></table></figure>
-
-
-
-<p>以上便是拉模型的实现，可以发现，拉模型在定义抽象观察者 Submodule 的 update 函数时，并没有传递具体的状态参数，而是直接将被观察者对象 Sensor 的实例传了过去。Sensor 内部定义 get 函数以获取 Sensor 当前的状态。观察者 Submodule 收到 被观察者的通知后，根据自己的需求，主动到 Sensor 通过 get 函数拉取参数。这便是拉模型的实现。</p>
-<p>其实总结起来，拉模型相较于推模型最大的变化就是执行 update 函数时传递参数的不同，推模型传递的是具体的参数，而拉模型传递的是被观察者对象的实例。</p>
-<p>前面在使用 jdk 提供的观察者模式框架时， update 方法有两个参数，一个是被观察者本身，一个是 object 类型的数据（标准说法叫 DTO (数据传输对象)），使用这种方式实现观察者模式，不同的观察者可以根据自己的需求完成不同的操作，故 jdk 中的观察者模式框架既支持推模型，又支持拉模型</p>
-<p>拉模型的好处是可以理解了，但是拉模型也有一个明显的弊端，每个观察者都会拿到被观察者的对象引用，被观察者需要进行合理的接口设计以及访问控制，防止观察者修对被观察者进行恶意修改</p>
-<h2 id="观察者模式在-Android-中的使用"><a href="#观察者模式在-Android-中的使用" class="headerlink" title="观察者模式在 Android 中的使用"></a>观察者模式在 Android 中的使用</h2><p>说起 Android 中观察者模式的使用，</p>
-<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2><ul>
-<li><p>观察者消息响应方式</p>
-<p>在前面的示例代码中，被观察者通知观察者使用循环的方式逐个通知观察者，逐个执行观察者的 update 方法。在实际业务中，有些观察者的 update 方法可能是一个很耗时的逻辑，如果是这样，后续观察者的 update 方法可能会被阻塞，被观察者的 notify 方法的执行时间可能被拉长。故需要根据实际的业务场景好好设计观察者的响应方式。通常可以使用两种方式优化观察者的响应：多线程技术，观察者执行 update 方法时，新开线程，降低被观察者的阻塞时间；缓存技术，为正在执行响应的观察者准备足够的资源，让观察者快速执行返回。</p>
-</li>
-<li><p>是否需要全部通知</p>
-<p>每次被观察者状态的改变都需要全部通知观察者，所有的观察者都需要执行 update 方法。这个地方有一个地方可以优化点：是否任何状态的改变都需要通知观察者。在实现具体被观察者的 notifiy 时，可以根据实际场景，判断是否需要通知，提高效率。</p>
-</li>
-</ul>
-<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><p>观察者和被观察者之间时抽象耦合，这样无论是观察者还是被观察者，都易于扩展</p>
-<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><p>被观察者和观察者之间是一对多的关系，调试观察者比较复杂；被观察者在通知观察者时，默认使用顺序的方式通知观察者，如果不优化观察者的执行方式，一个观察者阻塞会导致系统阻塞，影响系统效率</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>观察者模式是被观察者和观察者之间一对多的关系，被观察者保存了观察者的集合，当观察者状态发生变化时，会通知观察者集合中的所有观察者</li>
-<li>观察者模式存在推模型和拉模型，相对于推模型，拉模型允许观察者根据自己的需求从被观察者获取自身需求的信息</li>
-<li>观察者模式在实现时需要考虑到观察者的响应方式，防止观察者执行响应导致的阻塞</li>
-<li>对于被观察者状态的改变，可以考虑是否需要通知观察者，提高效率</li>
-</ul>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2697,7 +2687,7 @@ public V put(K key, V value) {
               
                 <a href="/go/archives%7C%7C%20archive">
               
-                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-count">28</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

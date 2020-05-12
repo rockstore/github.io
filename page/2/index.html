@@ -238,6 +238,450 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-mediator/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/05/design-pattern-mediator/" itemprop="url">中介者模式</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T10:07:46+08:00">
+                2020-05-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
+                    <span itemprop="name">设计模式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="中介者模式"><a href="#中介者模式" class="headerlink" title="中介者模式"></a>中介者模式</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>包装了一系列对象相互作用的方式，使得这些对象不必相互明显引用，从而使他们可以较松散的耦合，当这些对象中的某些对象之间相互发生作用发生改变时，不会理解影响到其他的一些对象之间的相互作用，从而保证这些相互作用可以彼此独立地变化。</p>
+<h2 id="场景分析"><a href="#场景分析" class="headerlink" title="场景分析"></a>场景分析</h2><p>上面的定义很官方，其实生活中，中介者模式离我们最近的应该就是房产中介了，卖房者将房子挂在房屋中介，购买者通过房屋中介得到房屋信息，然后通过中介达成最后的交易。如何更加形象地去理解呢，先看下下面这张图</p>
+<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/un_mediator.png" alt=""></p>
+<p>可以看到，存在 A - D 五个对象，他们之间存在相互作用，他们之间的耦合关系使得修改某一个对象的行为时，可能会印象其他对象的行为。出现上述问题的根本原因是这五个对象之间是直接相互依赖，如果换一种方式会不会好些呢？</p>
+<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/mediator_optimize.png" alt=""></p>
+<p>这样修改之后的好处也是十分明显，最显著的优点，对象之间的直接依赖被解除了，对象之间依赖关系的复杂性被大大降低，某个对象的修改之后，如果对其他对象有影响，直接修改中介者即可。以上使用的就是中介者模式的思想。</p>
+<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/mediator.png" alt=""></p>
+<p>如上图所示，中介者模式涉及到四种角色：</p>
+<ul>
+<li><p>Mediator 抽象中介者</p>
+<p>抽象中介者定义了各同事之间的通信接口</p>
+</li>
+<li><p>ConcreteMediator 具体中介者</p>
+<p>协调各同事之间的通信写作行为，同时持有同事对象的引用</p>
+</li>
+<li><p>Colleague 抽象同事类</p>
+<p>定义各个同时的方法，同时持有中介者对象的引用，同事之间可以通过持有的中介者对象的引用进行相互通信写作</p>
+</li>
+<li><p>ConcreteColleague 具体同事类</p>
+<p>具体同事类实现了抽象同事类的方法</p>
+</li>
+</ul>
+<h2 id="一般实现"><a href="#一般实现" class="headerlink" title="一般实现"></a>一般实现</h2><p>抽象中介者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Mediator</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">changeState</span><span class="params">(Colleague colleague)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>抽象同事</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Colleague</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> Mediator mediator;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Colleague</span><span class="params">(Mediator mediator)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		<span class="keyword">this</span>.mediator = mediator;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">changeState</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (mediator != <span class="keyword">null</span>) &#123;</span><br><span class="line">			mediator.changeState(<span class="keyword">this</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span></span>;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>抽象同事持有中介者对象 mediator，并定义了 operation 函数</p>
+<p>具体同事 ColleagueA</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ColleagueA</span> <span class="keyword">extends</span> <span class="title">Colleague</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ColleagueA</span><span class="params">(Mediator mediator)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">super</span>(mediator);</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ColleagueB has changed its state!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在本 Demo 中，只有 ColleagueA 和 ColleagueB，ColleagueA 和 ColleagueB 通过中介者沟通，ColleagueA 收到 ColleagueB 状态发生变化后，在 operation 函数中输出提示字符串，ColleagueB 也是如此。</p>
+<p>具体中介者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteMediator</span> <span class="keyword">extends</span> <span class="title">Mediator</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> Colleague colleagueA;</span><br><span class="line">	<span class="keyword">private</span> Colleague colleagueB;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setColleagueA</span><span class="params">(ColleagueA colleagueA)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.colleagueA = colleagueA;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setColleagueB</span><span class="params">(ColleagueB colleagueB)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.colleagueB = colleagueB;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">changeState</span><span class="params">(Colleague colleague)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">if</span> (colleague <span class="keyword">instanceof</span> ColleagueA &amp;&amp; colleagueB != <span class="keyword">null</span>) &#123;</span><br><span class="line">			colleagueB.operation();</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (colleague <span class="keyword">instanceof</span> ColleagueB &amp;&amp; colleagueA != <span class="keyword">null</span>) &#123;</span><br><span class="line">			colleagueA.operation();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">ConcreteMediator mediator = <span class="keyword">new</span> ConcreteMediator();</span><br><span class="line">ColleagueA colleagueA = <span class="keyword">new</span> ColleagueA(mediator);</span><br><span class="line">ColleagueB colleagueB = <span class="keyword">new</span> ColleagueB(mediator);</span><br><span class="line">mediator.setColleagueA(colleagueA);</span><br><span class="line">mediator.setColleagueB(colleagueB);</span><br><span class="line"></span><br><span class="line">colleagueA.changeState();</span><br><span class="line">colleagueB.changeState();</span><br></pre></td></tr></table></figure>
+
+<p>程序运行结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ColleagueA has changes its state!!</span><br><span class="line">ColleagueB has changed its state!!</span><br></pre></td></tr></table></figure>
+
+<h2 id="中介者在-Android-中的使用"><a href="#中介者在-Android-中的使用" class="headerlink" title="中介者在 Android 中的使用"></a>中介者在 Android 中的使用</h2><p>此部分参考了《Android源码设计模式 实战与分析》一书。Android 源码中实现锁屏功能的源码 KeyguardViewMediator.java 就是中介者模式。锁屏对应移动设备的用户来说，只是一个很简单的操作，点下 按钮即可，但是对于系统来说，锁屏功能的实现会涉及很多子系统。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">KeyguardViewMediator</span> <span class="keyword">extends</span> <span class="title">SystemUI</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">private</span> AlarmManager mAlarmManager;</span><br><span class="line">    <span class="keyword">private</span> AudioManager mAudioManager;</span><br><span class="line">    <span class="keyword">private</span> StatusBarManager mStatusBarManager;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">private</span> PowerManager mPM;</span><br><span class="line">    <span class="keyword">private</span> TrustManager mTrustManager;</span><br><span class="line">    <span class="keyword">private</span> StatusBarKeyguardViewManager mStatusBarKeyguardViewManager;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上是 KeyguardViewMediator 类的部分代码，有很多其他的系统功能对象，这些对象需要组合在一起才能完成锁屏状态的各种操作，以解锁时播放声音为例，KeyguardViewMediator 函数 playSounds 完成解锁时声音的播放</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">playSounds</span><span class="params">(<span class="keyword">boolean</span> locked)</span> </span>&#123;</span><br><span class="line">        playSound(locked ? mLockSoundId : mUnlockSoundId);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">playSound</span><span class="params">(<span class="keyword">int</span> soundId)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (soundId == <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">        <span class="keyword">final</span> ContentResolver cr = mContext.getContentResolver();</span><br><span class="line">        <span class="keyword">if</span> (Settings.System.getInt(cr, Settings.System.LOCKSCREEN_SOUNDS_ENABLED, <span class="number">1</span>) == <span class="number">1</span>) &#123;</span><br><span class="line"></span><br><span class="line">            mLockSounds.stop(mLockSoundStreamId);</span><br><span class="line">            <span class="comment">// Init mAudioManager</span></span><br><span class="line">            <span class="keyword">if</span> (mAudioManager == <span class="keyword">null</span>) &#123;</span><br><span class="line">                mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);</span><br><span class="line">                <span class="keyword">if</span> (mAudioManager == <span class="keyword">null</span>) <span class="keyword">return</span>;</span><br><span class="line">                mUiSoundsStreamType = mAudioManager.getUiSoundsStreamType();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            mUiOffloadThread.submit(() -&gt; &#123;</span><br><span class="line">                <span class="comment">// If the stream is muted, don't play the sound</span></span><br><span class="line">                <span class="keyword">if</span> (mAudioManager.isStreamMute(mUiSoundsStreamType)) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">int</span> id = mLockSounds.play(soundId,</span><br><span class="line">                        mLockSoundVolume, mLockSoundVolume, <span class="number">1</span><span class="comment">/*priortiy*/</span>, <span class="number">0</span><span class="comment">/*loop*/</span>, <span class="number">1.0f</span><span class="comment">/*rate*/</span>);</span><br><span class="line">                <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">                    mLockSoundStreamId = id;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>如上所示，KeyguardViewMediator 作为协调者，通过调用 没AudioManager 的相关接口完成了解锁时声音播放的操作。</p>
+<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><p>中介者模式的有点十分明显，将多对多转换为一对多，减小了同事类之间的耦合，使得同事类之间可以独立地使用，同事类的关系易于理解和维护。</p>
+<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><p>一对多的关系可能会导致中介者责任过大，中介者出现异常可能会导致同事类之间的交互出现异常；中介者模式可能会被滥用，大多数场景中，同事类之间的关系不会复杂到网状结构，不需要引入中介者模式，如果强行使用中介者模式，不仅会增加设计的复杂，也会让原本简单的业务逻辑变得复杂。</p>
+<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><p>对象之间的交互操作很多，且这些操作存在彼此依赖，当这些依赖关系已经达到网状时，为了防止一个对象的修改影响其他对象之间的相互操作，可以采用中介者模式减少或者降低耦合关系。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-watcher/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/05/design-pattern-watcher/" itemprop="url">观察者模式</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T10:06:21+08:00">
+                2020-05-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
+                    <span itemprop="name">设计模式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="观察者模式"><a href="#观察者模式" class="headerlink" title="观察者模式"></a>观察者模式</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>相对于其他模式，观察者模式很容易理解，观察者模式又叫发布订阅模式，定义了被观察者和观察者之间一对多的关系，被观察者由于某种原因发生变化时，所有的观察者都会根据这种变化做出对应的行为</p>
+<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/observe.png" alt=""></p>
+<p>从 UML 可以看到观察者模式涉及到四个角色：</p>
+<ul>
+<li><p>Obserable 抽象被观察者角色</p>
+<p>抽象被观察者角色持有观察者实例的集合，并提供添加和删除观察者的接口</p>
+</li>
+<li><p>ConcreteObservable 具体被观察者角色</p>
+<p>具体被观察者角色负责维护被观察者的状态，当状态发生变化时通知观察者执行 update 方法</p>
+</li>
+<li><p>Observer 抽象观察者角色</p>
+<p>定义观察者需要实现的接口，当具体被观察者维护的状态发生变化时，将通过此接口通知观察者</p>
+</li>
+<li><p>ConcreteObserver 具体观察者角色</p>
+<p>实现抽象观察者定义的接口，处理具体被观察者角色发出的状态变化</p>
+</li>
+</ul>
+<p>在日常开发中，往往不会将抽象被观察者和具体被观察者进行区分，最后就只有 被观察者角色，抽象观察者角色，具体观察者角色。</p>
+<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/simple-observer.png" alt=""></p>
+<h2 id="简单实现"><a href="#简单实现" class="headerlink" title="简单实现"></a>简单实现</h2><p>抽象观察者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">update</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>具体观察者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteObserverA</span> <span class="keyword">implements</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteObserverA updates"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteObserverB</span> <span class="keyword">implements</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteObserverB updates"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>抽象被观察者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> ArrayList&lt;Observer&gt; observers = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(Observer observer)</span> </span>&#123;</span><br><span class="line">		observers.add(observer);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">(Observer observer)</span> </span>&#123;</span><br><span class="line">		observers.remove(observer);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> ArrayList&lt;Observer&gt; <span class="title">getObservers</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> observers;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>具体被观察者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteSubject</span> <span class="keyword">extends</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> state = <span class="number">0</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setState</span><span class="params">(<span class="keyword">int</span> newState)</span> </span>&#123;</span><br><span class="line">		state = newState;</span><br><span class="line">		change();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">change</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (Observer observer : getObservers()) &#123;</span><br><span class="line">			observer.update();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">		ConcreteSubject concreteSubject = <span class="keyword">new</span> ConcreteSubject();</span><br><span class="line">		concreteSubject.add(<span class="keyword">new</span> ConcreteObserverA());</span><br><span class="line">		concreteSubject.add(<span class="keyword">new</span> ConcreteObserverB());</span><br><span class="line">		concreteSubject.setState(<span class="number">1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ConcreteSubject concreteSubject = <span class="keyword">new</span> ConcreteSubject();</span><br><span class="line">concreteSubject.add(<span class="keyword">new</span> ConcreteObserverA());</span><br><span class="line">concreteSubject.add(<span class="keyword">new</span> ConcreteObserverB());</span><br><span class="line">concreteSubject.setState(<span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+<p>测试代码运行结果</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ConcreteObserverA updates</span><br><span class="line">ConcreteObserverB updates</span><br></pre></td></tr></table></figure>
+
+<p>上述的观察者模式简单实现是我们纯手打，其实 jdk 也已经提供了观察者框架，很简洁很简单。jdk 中的观察者模式需要我们关注两个类：</p>
+<ul>
+<li><p>Observer</p>
+<p>抽象观察者，定义了如下的观察者接口</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span>   o     the observable object.</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span>   arg   an argument passed to the &lt;code&gt;notifyObservers&lt;/code&gt;</span></span><br><span class="line"><span class="comment">     *                 method.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">update</span><span class="params">(Observable o, Object arg)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Observable</p>
+<p>被观察者，其实我们可以将其理解为前面提到的抽象被观察者角色，里面提供了观察者添加和删除方法，并保存了具体观察者的集合。</p>
+</li>
+</ul>
+<p>接下来我们使用 jdk 提供的框架实现一个简单的观察者 Demo。</p>
+<p>首先定义具体观察者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ObserverA</span> <span class="keyword">implements</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">(Observable o, Object arg)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ObserverA updates:"</span> + o + <span class="string">" args:"</span> + arg);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ObserverB</span> <span class="keyword">implements</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">(Observable o, Object arg)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ObserverA updates:"</span> + o + <span class="string">" args:"</span> + arg);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>定义具体被观察者角色，具体</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyObservable</span> <span class="keyword">extends</span> <span class="title">Observable</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		setChanged();</span><br><span class="line">		notifyObservers(<span class="string">"1234"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MyObservable myObservable = <span class="keyword">new</span> MyObservable();</span><br><span class="line">myObservable.addObserver(<span class="keyword">new</span> ObserverA());</span><br><span class="line">myObservable.addObserver(<span class="keyword">new</span> ObserverB());</span><br><span class="line">myObservable.update();</span><br></pre></td></tr></table></figure>
+
+<p>运行结果如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ObserverA updates:com.apm.windseeker.observer_injava.MyObservable@<span class="number">15</span>db9742 args:<span class="number">1234</span></span><br><span class="line">ObserverA updates:com.apm.windseeker.observer_injava.MyObservable@<span class="number">15</span>db9742 args:<span class="number">1234</span></span><br></pre></td></tr></table></figure>
+
+<p>相较于我们自己实现的观察者， jdk 观察者框架在通知具体观察者进行更新时，将具体被观察者的对象一起传了过去。感兴趣的同学可以看下 jdk 观察者的实现，代码很少，在下面的分析中还会涉及到 jdk 中的观察者框架</p>
+<h2 id="推模型和拉模型"><a href="#推模型和拉模型" class="headerlink" title="推模型和拉模型"></a>推模型和拉模型</h2><p>在使用观察者模式的时候，我们很少去关注观察者模式使用的是推模型还是拉模型，因为我们已经习惯于使用推模型了，什么是推模型，什么是拉模型呢？</p>
+<p>推模型，拉模型是相对于被观察者来说的，如果被观察者在通知观察者时，直接将内容告知观察者，也就是在执行观察者的 update 方法时， update 里的参数就是被观察者需要告知观察者的内容，这样的实现模型叫做推模型，在推模型中，观察者仅仅是被动接受被观察者传过来的参数，使用推模型的前提是我们能确保所有的观察者都关注同样的内容。如果不同观察者关注的内容不一样，那该怎么处理呢，看下面的一个场景</p>
+<p>有这样一个系统，系统中包含传感器以及子模块，传感器负责收集空气湿度，温度等信息，不同的子模块可会根据不同的状态做出不同的处理：子模块 A 仅仅是输出当前湿度信息，子模块 B 在温度低于 30 摄氏度时仅仅是输出温度信息，高于 30 摄氏度时需要输出风速信息。</p>
+<p>不同模块需要的信息不同，且相同模块在不同状态下需要的信息也不相同，推模型显然已经无法满足需求，先看下实现</p>
+<p>抽象子模块：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Submodule</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">update</span><span class="params">(Sensor sensor)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>传感器：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.apm.windseeker.observer_injava;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Sensor</span> </span>&#123;</span><br><span class="line">	<span class="comment">// 温度</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> temperature;</span><br><span class="line">	<span class="comment">// 湿度</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> humidity;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> ArrayList&lt;Submodule&gt; submodules = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addSubmodule</span><span class="params">(Submodule submodule)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (submodule != <span class="keyword">null</span>) &#123;</span><br><span class="line">			submodules.add(submodule);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">removeSubmodule</span><span class="params">(Submodule submodule)</span> </span>&#123;</span><br><span class="line">		submodules.remove(submodule);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">notifySubmodule</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (Submodule submodule : submodules) &#123;</span><br><span class="line">			submodule.update(<span class="keyword">this</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">changeState</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		notifySubmodule();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">updateTemperature</span><span class="params">(<span class="keyword">int</span> newTemperature)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (temperature != newTemperature) &#123;</span><br><span class="line">			temperature = newTemperature;</span><br><span class="line">			changeState();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">updateHumidity</span><span class="params">(<span class="keyword">int</span> newHumidity)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (humidity != newHumidity) &#123;</span><br><span class="line">			humidity = newHumidity;</span><br><span class="line">			changeState();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getTemperature</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> temperature;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getHumidity</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> humidity;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>子模块 A</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SubmoduleA</span> <span class="keyword">implements</span> <span class="title">Submodule</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">(Sensor sensor)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Sensor state changes, current humidity:"</span> + sensor.getHumidity());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>子模块 B</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SubmoduleB</span> <span class="keyword">implements</span> <span class="title">Submodule</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">(Sensor sensor)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">if</span> (sensor.getTemperature() &lt; <span class="number">30</span>) &#123;</span><br><span class="line">			System.out.println(<span class="string">"temperature &lt; 30, current temperature:"</span> + sensor.getTemperature());</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			System.out.println(<span class="string">"temperature &gt;= 30, current temperature:"</span> + sensor.getTemperature() + <span class="string">",current humidity:"</span> + sensor.getHumidity());</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Sensor sensor = <span class="keyword">new</span> Sensor();</span><br><span class="line">sensor.addSubmodule(<span class="keyword">new</span> SubmoduleB());</span><br><span class="line">sensor.addSubmodule(<span class="keyword">new</span> SubmoduleA());</span><br><span class="line">sensor.updateHumidity(<span class="number">1</span>);</span><br><span class="line">System.out.println();</span><br><span class="line">sensor.updateTemperature(<span class="number">20</span>);</span><br><span class="line">System.out.println();</span><br><span class="line">sensor.updateTemperature(<span class="number">40</span>);</span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">temperature &lt; <span class="number">30</span>, current temperature:<span class="number">0</span></span><br><span class="line">Sensor state changes, current humidity:<span class="number">1</span></span><br><span class="line"></span><br><span class="line">temperature &lt; <span class="number">30</span>, current temperature:<span class="number">20</span></span><br><span class="line">Sensor state changes, current humidity:<span class="number">1</span></span><br><span class="line"></span><br><span class="line">temperature &gt;= <span class="number">30</span>, current temperature:<span class="number">40</span>,current humidity:<span class="number">1</span></span><br><span class="line">Sensor state changes, current humidity:<span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>以上便是拉模型的实现，可以发现，拉模型在定义抽象观察者 Submodule 的 update 函数时，并没有传递具体的状态参数，而是直接将被观察者对象 Sensor 的实例传了过去。Sensor 内部定义 get 函数以获取 Sensor 当前的状态。观察者 Submodule 收到 被观察者的通知后，根据自己的需求，主动到 Sensor 通过 get 函数拉取参数。这便是拉模型的实现。</p>
+<p>其实总结起来，拉模型相较于推模型最大的变化就是执行 update 函数时传递参数的不同，推模型传递的是具体的参数，而拉模型传递的是被观察者对象的实例。</p>
+<p>前面在使用 jdk 提供的观察者模式框架时， update 方法有两个参数，一个是被观察者本身，一个是 object 类型的数据（标准说法叫 DTO (数据传输对象)），使用这种方式实现观察者模式，不同的观察者可以根据自己的需求完成不同的操作，故 jdk 中的观察者模式框架既支持推模型，又支持拉模型</p>
+<p>拉模型的好处是可以理解了，但是拉模型也有一个明显的弊端，每个观察者都会拿到被观察者的对象引用，被观察者需要进行合理的接口设计以及访问控制，防止观察者修对被观察者进行恶意修改</p>
+<h2 id="观察者模式在-Android-中的使用"><a href="#观察者模式在-Android-中的使用" class="headerlink" title="观察者模式在 Android 中的使用"></a>观察者模式在 Android 中的使用</h2><p>说起 Android 中观察者模式的使用，</p>
+<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2><ul>
+<li><p>观察者消息响应方式</p>
+<p>在前面的示例代码中，被观察者通知观察者使用循环的方式逐个通知观察者，逐个执行观察者的 update 方法。在实际业务中，有些观察者的 update 方法可能是一个很耗时的逻辑，如果是这样，后续观察者的 update 方法可能会被阻塞，被观察者的 notify 方法的执行时间可能被拉长。故需要根据实际的业务场景好好设计观察者的响应方式。通常可以使用两种方式优化观察者的响应：多线程技术，观察者执行 update 方法时，新开线程，降低被观察者的阻塞时间；缓存技术，为正在执行响应的观察者准备足够的资源，让观察者快速执行返回。</p>
+</li>
+<li><p>是否需要全部通知</p>
+<p>每次被观察者状态的改变都需要全部通知观察者，所有的观察者都需要执行 update 方法。这个地方有一个地方可以优化点：是否任何状态的改变都需要通知观察者。在实现具体被观察者的 notifiy 时，可以根据实际场景，判断是否需要通知，提高效率。</p>
+</li>
+</ul>
+<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><p>观察者和被观察者之间时抽象耦合，这样无论是观察者还是被观察者，都易于扩展</p>
+<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><p>被观察者和观察者之间是一对多的关系，调试观察者比较复杂；被观察者在通知观察者时，默认使用顺序的方式通知观察者，如果不优化观察者的执行方式，一个观察者阻塞会导致系统阻塞，影响系统效率</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>观察者模式是被观察者和观察者之间一对多的关系，被观察者保存了观察者的集合，当观察者状态发生变化时，会通知观察者集合中的所有观察者</li>
+<li>观察者模式存在推模型和拉模型，相对于推模型，拉模型允许观察者根据自己的需求从被观察者获取自身需求的信息</li>
+<li>观察者模式在实现时需要考虑到观察者的响应方式，防止观察者执行响应导致的阻塞</li>
+<li>对于被观察者状态的改变，可以考虑是否需要通知观察者，提高效率</li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-command/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1991,467 +2435,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-component/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="rockstore">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/go/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Rock">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/go/2020/05/05/design-pattern-component/" itemprop="url">组合模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T09:42:04+08:00">
-                2020-05-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="组合模式"><a href="#组合模式" class="headerlink" title="组合模式"></a>组合模式</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>组合模式是一种对象的结构型模式，也被称为”部分-整体”模式，组合模式将对象整合到树结构中，用来描述部分与整体的关系， Android 中的 View 和 ViewGroup 就使用到了组合模式，会在后面分析。</p>
-<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>将对象整合成树形结构以表示“部分-整体”的层次结构，使得用户对单个对象和组合对象的操作具有一致性。</p>
-<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><p>对象可以整合成树形的层次结构，且对单个对象和组合的操作具有一致性。</p>
-<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="http://p0.qhimg.com/t01e3daa698c399c040.png" alt=""></p>
-<p>组合模式涉及到3种角色：</p>
-<p><strong>抽象组件角色</strong>：抽象角色，定义参加组合对象的公共接口以及默认行为</p>
-<p><strong>树叶组件角色</strong>：树叶组件没有子对象，实现参加组合的原始对象的行为</p>
-<p><strong>树枝组件角色</strong>：有子对象的组件，同时定义了对子对象的管理方法。</p>
-<p>在上面的 UML 中展示的组合模式中，只有树枝组件角色定义了组件管理的方法，树叶组件只实现了抽象组件定义的方法，树叶组件和树枝组件具有不同的操作，这种组合成为安全组合模式。既然有安全组合模式，是否存在不安全的组合模式呢？有，但是不安全的组合模式成为透明组合。</p>
-<p><img src="http://p0.qhimg.com/t0119919f978ab26255.png" alt=""></p>
-<p>如上图所示，在透明组合模式中，抽象组件定义了所有树叶组件和树枝组件的方法。这些方法包括原始对象的行为 operation 以及管理组件的行为，所有的树叶组件和树枝组件都需要实现这些方法。由于所有的组件都实现相同的方法，在调用管理组件的方法时需要进行判断组件是否为树叶组件，如果是树叶组件则无法执行管理组件的方法，这就是透明组合的不安全点。</p>
-<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>安全组合和透明组合模式的实现，分别对应两种 UML 。</p>
-<h3 id="安全组合"><a href="#安全组合" class="headerlink" title="安全组合"></a>安全组合</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Component</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Leaf</span> <span class="keyword">implements</span> <span class="title">Component</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Leaf operation"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Composite</span> <span class="keyword">implements</span> <span class="title">Component</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> ArrayList&lt;Component&gt; components;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Composite</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		components = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Composite operation"</span>);</span><br><span class="line">		<span class="keyword">for</span> (Component component : components) &#123;</span><br><span class="line">			component.operation();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">/****************manage operations*****************/</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addComponent</span><span class="params">(Component component)</span> </span>&#123;</span><br><span class="line">		components.add(component);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">removeComponent</span><span class="params">(Component component)</span> </span>&#123;</span><br><span class="line">		components.remove(component);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> Component <span class="title">getComponent</span><span class="params">(<span class="keyword">int</span> index)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> components.get(index);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">    Leaf leaf1 = <span class="keyword">new</span> Leaf();</span><br><span class="line">    Leaf leaf2 = <span class="keyword">new</span> Leaf();</span><br><span class="line"></span><br><span class="line">    Composite composite = <span class="keyword">new</span> Composite();</span><br><span class="line">    composite.addComponent(leaf1);</span><br><span class="line">    composite.addComponent(leaf2);</span><br><span class="line"></span><br><span class="line">    leaf1.operation();</span><br><span class="line">    composite.operation();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>程序运行结果如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Leaf operation</span><br><span class="line">Composite operation</span><br><span class="line">Leaf operation</span><br><span class="line">Leaf operation</span><br></pre></td></tr></table></figure>
-
-
-
-<p>如以上代码所示，安全组合中，只有树枝节点实现了组件管理方法，在树叶节点无法调用组件管理方法。</p>
-<h3 id="透明组合"><a href="#透明组合" class="headerlink" title="透明组合"></a>透明组合</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Component</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">addComponent</span><span class="params">(Component component)</span> <span class="keyword">throws</span> UnsupportedOperationException</span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">removeComponent</span><span class="params">(Component component)</span> <span class="keyword">throws</span> UnsupportedOperationException</span>; </span><br><span class="line">	<span class="function">Component <span class="title">getComponent</span><span class="params">(<span class="keyword">int</span> index)</span> <span class="keyword">throws</span> UnsupportedOperationException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Leaf</span> <span class="keyword">implements</span> <span class="title">Component</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Leaf operation"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addComponent</span><span class="params">(Component component)</span> <span class="keyword">throws</span> UnsupportedOperationException </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">"leaf can not addComponent"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">removeComponent</span><span class="params">(Component component)</span> <span class="keyword">throws</span> UnsupportedOperationException </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">"leaf can not remoevComponent"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Component <span class="title">getComponent</span><span class="params">(<span class="keyword">int</span> index)</span> <span class="keyword">throws</span> UnsupportedOperationException </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">"leaf can not getComponent"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Composite</span> <span class="keyword">implements</span> <span class="title">Component</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> ArrayList&lt;Component&gt; components;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Composite</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		components = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Composite operation"</span>);</span><br><span class="line">		<span class="keyword">for</span> (Component component : components) &#123;</span><br><span class="line">			component.operation();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">/****************manage operations*****************/</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addComponent</span><span class="params">(Component component)</span> </span>&#123;</span><br><span class="line">		components.add(component);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">removeComponent</span><span class="params">(Component component)</span> </span>&#123;</span><br><span class="line">		components.remove(component);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> Component <span class="title">getComponent</span><span class="params">(<span class="keyword">int</span> index)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> components.get(index);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> <span class="keyword">throws</span> IllegalAccessException </span>&#123;</span><br><span class="line">    Leaf leaf1 = <span class="keyword">new</span> Leaf();</span><br><span class="line">    Leaf leaf2 = <span class="keyword">new</span> Leaf();</span><br><span class="line"></span><br><span class="line">    Composite composite = <span class="keyword">new</span> Composite();</span><br><span class="line">    composite.addComponent(leaf1);</span><br><span class="line">    composite.addComponent(leaf2);</span><br><span class="line"></span><br><span class="line">    leaf1.operation();</span><br><span class="line">    composite.operation();</span><br><span class="line">    leaf1.addComponent(leaf2);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>程序运行结果如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Leaf operation</span><br><span class="line">Composite operation</span><br><span class="line">Leaf operation</span><br><span class="line">Leaf operation</span><br><span class="line">Exception in thread <span class="string">"main"</span> java.lang.UnsupportedOperationException: leaf can not addComponent</span><br><span class="line">	at com.rock.composite.transparent.Leaf.addComponent(Leaf.java:<span class="number">14</span>)</span><br><span class="line">	at com.rock.composite.transparent.Client.main(Client.java:<span class="number">15</span>)</span><br></pre></td></tr></table></figure>
-
-<p>在透明组合模式中，抽象组件定义组件不仅定义了原始的行为 operation ，还定义组件管理行为，树叶和树枝节点。在程序运行期间，在调用组件管理方法之前，需要进行类型判断，否则会抛出 UnsupportedOperationException，这就是透明模式的不安全点。</p>
-<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><p>上面的实现根据组合模式的 UML 实现了简单的组合，现在有一个需求，需要自己实现一套文件管理，需要实现文件的添加，删除，修改文件名。</p>
-<p><img src="http://p0.qhimg.com/t012b8c957ab6005259.png" alt=""></p>
-<p>如上图所示，为 Windows 的 C 盘的部分文件结构，浅红色的是文件夹，白色是文件，毫无疑问，文件系统是树形结构。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IFile</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="function">String <span class="title">getName</span><span class="params">()</span></span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">addFile</span><span class="params">(IFile file)</span></span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">deleteFile</span><span class="params">()</span></span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">renameFile</span><span class="params">(String newName)</span></span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">boolean</span> <span class="title">exist</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>抽象组件 IFile 定义文件的操作，添加 addFile，删除 deleteFile，重命名 renameFile，且定义获取文件名 getName 和判断文件是否存在接口 exist</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteFile</span> <span class="keyword">implements</span> <span class="title">IFile</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> String fileName;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">boolean</span> exist = <span class="keyword">false</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ConcreteFile</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		fileName = name;</span><br><span class="line">		exist = <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> String <span class="title">getName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		checkExist();</span><br><span class="line">		<span class="keyword">return</span> fileName;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addFile</span><span class="params">(IFile file)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">"concretefile can not add file"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deleteFile</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		checkExist();</span><br><span class="line">		exist = <span class="keyword">false</span>;</span><br><span class="line">		System.out.println(<span class="string">"file "</span> + fileName + <span class="string">" has been deleted"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">renameFile</span><span class="params">(String newName)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		checkExist();</span><br><span class="line">		fileName = newName;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">checkExist</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (!exist) &#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">"file "</span> + fileName + <span class="string">" does not exist!"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">exist</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">return</span> exist;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>普通文件不能执行添加文件操作，执行添加文件操作会抛出 UnsupportedOperationException 异常。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DirFile</span> <span class="keyword">implements</span> <span class="title">IFile</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> String dirName;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">boolean</span> exist = <span class="keyword">false</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> ArrayList&lt;IFile&gt; files = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">DirFile</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		dirName = name;</span><br><span class="line">		exist = <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> String <span class="title">getName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		checkExist();</span><br><span class="line">		<span class="keyword">return</span> dirName;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addFile</span><span class="params">(IFile file)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		checkExist();</span><br><span class="line">		files.add(file);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deleteFile</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		checkExist();</span><br><span class="line">		exist = <span class="keyword">false</span>;</span><br><span class="line">		System.out.println(<span class="string">"dir "</span> + dirName + <span class="string">" has been deleted"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">renameFile</span><span class="params">(String newName)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		checkExist();</span><br><span class="line">		dirName = newName;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">checkExist</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (!exist) &#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">"dir "</span> + dirName + <span class="string">" does not exist!"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">exist</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">return</span> exist;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试代码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">    ConcreteFile file1 = <span class="keyword">new</span> ConcreteFile(<span class="string">"test.txt"</span>);</span><br><span class="line">    ConcreteFile file2 = <span class="keyword">new</span> ConcreteFile(<span class="string">"dat.bat"</span>);</span><br><span class="line"></span><br><span class="line">    DirFile dir1 = <span class="keyword">new</span> DirFile(<span class="string">"backup"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 添加文件</span></span><br><span class="line">    dir1.addFile(file1);</span><br><span class="line">    dir1.addFile(file2);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 删除</span></span><br><span class="line">    file1.deleteFile();</span><br><span class="line">    file2.deleteFile();</span><br><span class="line">    dir1.deleteFile();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    ConcreteFile file3 = <span class="keyword">new</span> ConcreteFile(<span class="string">"learn.doc"</span>);</span><br><span class="line">    System.out.println(<span class="string">"file3 name:"</span> + file3.getName());</span><br><span class="line">    file3.renameFile(<span class="string">"learn_design.doc"</span>);</span><br><span class="line">    System.out.println(<span class="string">"file3 name:"</span> + file3.getName());</span><br><span class="line"></span><br><span class="line">    DirFile dir2 = <span class="keyword">new</span> DirFile(<span class="string">"learn"</span>);</span><br><span class="line">    System.out.println(<span class="string">"dir2 name:"</span> + dir2.getName());</span><br><span class="line">    dir2.renameFile(<span class="string">"learn_design"</span>);</span><br><span class="line">    System.out.println(<span class="string">"dir2 name:"</span> + dir2.getName());</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>运行结果如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">file test.txt has been deleted</span><br><span class="line">file dat.bat has been deleted</span><br><span class="line">dir backup has been deleted</span><br><span class="line">file3 name:learn.doc</span><br><span class="line">file3 name:learn_design.doc</span><br><span class="line">dir2 name:learn</span><br><span class="line">dir2 name:learn_design</span><br></pre></td></tr></table></figure>
-
-<p>在对普通文件 ConcreteFile 和目录文件 DirFile 进行添加，删除，重命名时，添加了文件存在的判断，如果文件已经被删除，则不能执行响应的操作。</p>
-<h2 id="组合模式在-Android-中的应用"><a href="#组合模式在-Android-中的应用" class="headerlink" title="组合模式在 Android 中的应用"></a>组合模式在 Android 中的应用</h2><p>组合模式在 Android 中最经典的应用应该属于 View 组件的设计了。 </p>
-<p><img src="http://p0.qhimg.com/t013098ead7231b2135.png" alt=""></p>
-<p>上图为 Android 中 View 组件中的组合模式设计。 View 类定义了组件的一些默认行为， ImageView 相当于组合模式中的树叶组件， ViewGroup 中可以添加其他类型的 View， 是组合模式中树枝组件，可以包含其他 View 组件，并提供了管理组件的方法。</p>
-<p>很显然， Android 中 View 组件的组合模式是安全的组合模式，树枝节点 ViewGroup 有管理组件的方法，树叶组件并没有。</p>
-<h2 id="安全和透明的选择"><a href="#安全和透明的选择" class="headerlink" title="安全和透明的选择"></a>安全和透明的选择</h2><p>安全组合中，由于树枝组件和树叶组件定义了不同的方法，对于客户端来说，在树叶组件上不会执行树枝组件的方法，不会抛出异常；透明组合中，由于树枝组件和树叶组件定义了相同的方法，树枝和树叶失去了类型信息，在执行树枝组件才有的方法之前，需要对组件的类型进行判断，否则可能会抛出异常。</p>
-<p>虽然组合的目的是为了是单个对象和组合对象的操作具有统一性，但在具体实践的过程中仍然需要根据实际的需求进行选择。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>组合模式可以清楚地定义分层次的复杂对象，表示对象的全部或者部分层次，它让高层模块忽略了层次的差异，方便对层次结构进行控制</li>
-<li>客户端可以使用一致的结构对单个对象或组合对象进行操作，不必关注对象类型</li>
-<li>组合模式中新增树叶节点或者树枝节点时无需对现有结构进行修改</li>
-<li>如果使用透明组合，由于系统中所有节点都实现了相同的接口，无法根据类型判断是否可对其进行某些操作，需要进行显式类型转换</li>
-</ul>
-<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p>1.《 Android 源码设计模式解析与实战》</p>
-<p>2.《JAVA与模式》之合成模式</p>
-<p>  <a href="https://www.cnblogs.com/java-my-life/archive/2012/04/17/2453861.html" target="_blank" rel="noopener">https://www.cnblogs.com/java-my-life/archive/2012/04/17/2453861.html</a></p>
-<p>3.java设计模式之组合模式</p>
-<p>  <a href="https://www.cnblogs.com/lfxiao/p/6816026.html" target="_blank" rel="noopener">https://www.cnblogs.com/lfxiao/p/6816026.html</a></p>
-<p>4.Java设计模式之《组合模式》及应用场景</p>
-<p>  <a href="https://www.cnblogs.com/V1haoge/p/6489827.html" target="_blank" rel="noopener">https://www.cnblogs.com/V1haoge/p/6489827.html</a></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-bridge/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="rockstore">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/go/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Rock">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/go/2020/05/05/design-pattern-bridge/" itemprop="url">桥接模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T09:41:51+08:00">
-                2020-05-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="桥接模式"><a href="#桥接模式" class="headerlink" title="桥接模式"></a>桥接模式</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>将抽象(Abstract)和实现(Implement)解耦，使得抽象和实现可以独立变化。</p>
-<p>定义很简单，但是理解起来却感觉一头雾水。。。。。。这个设计模式平时接触的可能比较少，要想有一个大致的了解，直接来个场景分析一下</p>
-<h2 id="场景分析"><a href="#场景分析" class="headerlink" title="场景分析"></a>场景分析</h2><p>场景分析借鉴了设计模式之禅。商人资金雄厚，准备生产交通工具赚钱，这里的交通工具是很简单，只要是能走，能带不就行（纯属例子）。商人觉得最近共享单车特别火，于是就开工厂生产共享单车；又过了一段时间，发现共享电动车特别火，于是开工厂生产共享电动车。当然，生产的这些交通工具都需要卖出去才能赚钱。</p>
-<p>交通工具定义了，接下来要定义工厂基类</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractFactory</span> </span>&#123;</span><br><span class="line">	<span class="comment">// 生产商品</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">makeProduct</span><span class="params">()</span></span>;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 销售商品</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">sellProduct</span><span class="params">()</span></span>;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 赚钱</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">makeMoney</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.makeProduct();</span><br><span class="line">		<span class="keyword">this</span>.sellProduct();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>工厂的基类很简单，定义了生产商品，销售商品的接口，并定义了赚钱的接口，赚钱就是生产商品并销售出去。</p>
-<p>需求中说过，需要生产共享单车，共享电动车，共享汽车，于是，需要定义三个交通工具类</p>
-<p>生产上面两种交通工具，需要两个工厂：</p>
-<p>自行车工厂：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BikeFactory</span> <span class="keyword">extends</span> <span class="title">AbstractFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">makeProduct</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"bike is made!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sellProduct</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"bike is sold"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">makeMoney</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">super</span>.makeMoney();</span><br><span class="line">		System.out.println(<span class="string">"BikeFactory makeMoney"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>电动车工厂：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ElectricBikeFactory</span> <span class="keyword">extends</span> <span class="title">AbstractFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">makeProduct</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ElectricBikeFactory makes ElectricBike"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sellProduct</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ElectricBike is sold"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">makeMoney</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">super</span>.makeMoney();</span><br><span class="line">		System.out.println(<span class="string">"ElectricBikeFactory make money"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试一下生产过程：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Boss</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">		</span><br><span class="line">		BikeFactory bikeFactory = <span class="keyword">new</span> BikeFactory();</span><br><span class="line">		bikeFactory.makeMoney();</span><br><span class="line">		</span><br><span class="line">		ElectricBikeFactory electricBikeFactory = <span class="keyword">new</span> ElectricBikeFactory();</span><br><span class="line">		electricBikeFactory.makeMoney();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">BikeFactory makes Bike!!</span><br><span class="line">Bike is sold</span><br><span class="line">BikeFactory makeMoney</span><br><span class="line">ElectricBikeFactory makes ElectricBike</span><br><span class="line">ElectricBike is sold</span><br><span class="line">ElectricBikeFactory make money</span><br></pre></td></tr></table></figure>
-
-<p>OK，共享单车和共享电动车已经成功为老板盈利了。突然有一天，共享汽车又火了，老板又要新建汽车工厂生产汽车了，OK，也没问题，继续新建汽车工厂，马上又满足了，又过了一段时间，共享 XXX 火了，老板要新建 XXX 工厂。</p>
-<p>火了一个共享单车，就新建共享单车工厂，火了共享电动车，就新建共享电动车工厂，火了共享汽车就新建汽车工厂，老板即使再有钱，也不能这么造啊，反正老板只打算跟风，为什么不能在同一个工厂生产多种产品呢？作为程序员的你，一下就明白了，商品不能和工厂绑定太紧了，商品和工厂需要能够独立进行变化，既然可以独立变化，商品也需要进行抽象。由于是商品，不管是单车，电动车还是汽车，只要能生产并卖出去即可：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IVehicle</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">beMade</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">beSold</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>接下来定义自行车，电动车和汽车</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Bike</span> <span class="keyword">implements</span> <span class="title">IVehicle</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">beMade</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Bike is being made!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">beSold</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Bike is being sold!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ElectricBike</span> <span class="keyword">implements</span> <span class="title">IVehicle</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">beMade</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ElectricBike is being made!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">beSold</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ElectricBike is being sold!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Car</span> <span class="keyword">implements</span> <span class="title">IVehicle</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">beMade</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Car is being made!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">beSold</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"Car is being sold!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>既然商品不能和工厂强绑定，需要对工厂进行修改</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractFactory</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> IVehicle vehicle;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AbstractFactory</span><span class="params">(IVehicle vehicle)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.vehicle = vehicle;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">makeMoney</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (vehicle != <span class="keyword">null</span>) &#123;</span><br><span class="line">			vehicle.beMade();</span><br><span class="line">			vehicle.beSold();</span><br><span class="line">			System.out.println(<span class="string">"makeMoney haha!!"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>接下来就定义一个工厂</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteFactory</span> <span class="keyword">extends</span> <span class="title">AbstractFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ConcreteFactory</span><span class="params">(IVehicle vehicle)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">super</span>(vehicle);</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">makeMoney</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">super</span>.makeMoney();</span><br><span class="line">		System.out.println(<span class="string">"ConcreteFactory makeMoney"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>OK，接下来让这个工厂生产自行车，当然，也可以生产电动车和汽车。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Boss</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">		Bike bike = <span class="keyword">new</span> Bike();</span><br><span class="line"><span class="comment">//		ElectricBike electricBike = new ElectricBike();</span></span><br><span class="line"><span class="comment">//		Car car = new Car();</span></span><br><span class="line">		ConcreteFactory factory = <span class="keyword">new</span> ConcreteFactory(bike);</span><br><span class="line">		factory.makeMoney();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>有一天突然发现，原来的共产产能不足，没关系，在新建一个工厂，这个工厂依然可以生产自行车，电动车和汽车，新建的工厂甚至可以添加自己的属性和方法。而且还可以发现，修改之后，只是用一个工厂就可以生产三种不同的产品，工厂类数量减少了。</p>
-<p>可以看到，使用这种方式后，工厂和产品之间已经实现了解耦，不存在依赖关系，他们之间可以自由演化扩展，这就是桥接模式。</p>
-<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/bridge.png" alt=""></p>
-<p>如上 UML 所示，桥接模式有四种角色：</p>
-<ul>
-<li><p>Abstraction 抽象化角色</p>
-<p>定义该角色的行为，同时保存一个对实现化角色的引用，该角色一般是抽象类。</p>
-</li>
-<li><p>Implementor 实现化角色</p>
-<p>定义实现化角色的行为和属性。</p>
-</li>
-<li><p>RefinedAbstraction 修正抽象化角色</p>
-<p>引用实现化角色对抽象化角色的行为进行修改</p>
-</li>
-<li><p>ConcreteImplementorA  ConcreteImplementorB 具体实现化角色</p>
-<p>实现实现化接口中的方法</p>
-</li>
-</ul>
-<h2 id="一般实现"><a href="#一般实现" class="headerlink" title="一般实现"></a>一般实现</h2><p>首先定义抽象化角色：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Abstraction</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> Implementor implementor;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Abstraction</span><span class="params">(Implementor implementor)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.implementor = implementor;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">request</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (implementor != <span class="keyword">null</span>) &#123;</span><br><span class="line">			implementor.doSomething();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> Implementor <span class="title">getImplementor</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> implementor;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>抽象实现化角色：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Implementor</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">doSomething</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">doOtherthing</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>具体实现化角色：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteImplementorA</span> <span class="keyword">implements</span> <span class="title">Implementor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomething</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteImplementorA doSomething"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doOtherthing</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteImplementorA doOtherthing"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteImplementorB</span> <span class="keyword">implements</span> <span class="title">Implementor</span> </span>&#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomething</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteImplementorB doSomething"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doOtherthing</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteImplementorB doOtherthing"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>修正抽象化角色：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RefinedAbstraction</span> <span class="keyword">extends</span> <span class="title">Abstraction</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">RefinedAbstraction</span><span class="params">(Implementor implementor)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">super</span>(implementor);</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">request</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">super</span>.request();</span><br><span class="line">		getImplementor().doOtherthing();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试代码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Client</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">		Implementor implementorA = <span class="keyword">new</span> ConcreteImplementorA();</span><br><span class="line">		Abstraction abstractionA = <span class="keyword">new</span> RefinedAbstraction(implementorA);</span><br><span class="line">		abstractionA.request();</span><br><span class="line">		</span><br><span class="line">		Implementor implementorB = <span class="keyword">new</span> ConcreteImplementorB();</span><br><span class="line">		Abstraction abstractionB = <span class="keyword">new</span> RefinedAbstraction(implementorB);</span><br><span class="line">		abstractionB.request();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>程序运行结果如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ConcreteImplementorA doSomething</span><br><span class="line">ConcreteImplementorA doOtherthing</span><br><span class="line">ConcreteImplementorB doSomething</span><br><span class="line">ConcreteImplementorB doOtherthing</span><br></pre></td></tr></table></figure>
-
-<h2 id="桥接模式在-Android-中的应用"><a href="#桥接模式在-Android-中的应用" class="headerlink" title="桥接模式在 Android 中的应用"></a>桥接模式在 Android 中的应用</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/bridge_window.png" alt=""></p>
-<p>Window 和 WindowManager 是典型的桥接模式，Window 类是桥接模式中的抽象化角色，持有实现化角色 WindowManager 的的实例； PhoneWindow 是修正抽象化角色，使用 WindowManager 提供的接口对内部的 View 进行添加删除等操作；WindowManagerImpl 为具体实现化角色。</p>
-<p>桥接模式在 Android 的 ListView 和 Adapter 中也有非常经典的使用，可以参考 <a href="https://blog.csdn.net/u010405231/article/details/49618511" target="_blank" rel="noopener">Android设计模式源码解析之桥接模式</a></p>
-<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><ul>
-<li><p>抽象和实现的分离</p>
-<p>抽象和实现充分解耦，抽象和实现可以独立演化。</p>
-</li>
-<li><p>优秀的扩充</p>
-<p>具体抽象化角色和具体实现角色可以任意扩展。如果需要新增具体抽象化角色或者具体实现化角色，只需要定义一个新的具体抽象化类或者具体实现化类即可，不需要修改其他任何东西。</p>
-</li>
-<li><p>屏蔽实现细节</p>
-<p>具体实现化类的实现细节对具体抽象化角色透明，具体抽象化角色不依赖具体实现化角色的细节。</p>
-</li>
-</ul>
-<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><p>要说桥接模式的缺点， 可能就是需要对系统有充分的理解。需要开发者可以识别两个独立变化的纬度，能够抽象出抽象实现角色以及抽象角色，否则可能会造成桥接模式使用不合理。</p>
-<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><ul>
-<li>如果一个系统需要在构件的抽象化角色和具体化角色之间增加更多的灵活性，避免在两个层次之间建立静态的继承联系，通过桥接模式可以使它们在抽象层建立一个关联关系。</li>
-<li>抽象化角色和实现化角色可以以继承的方式独立扩展而互不影响，在程序运行时可以动态将一个抽象化子类的对象和一个实现化子类的对象进行组合，即系统需要对抽象化角色和实现化角色进行动态耦合。</li>
-<li>一个类存在两个独立变化的维度，且这两个维度都需要进行扩展。</li>
-<li>对于那些不希望使用继承或因为多层次继承导致系统类的个数急剧增加的系统，桥接模式尤为适用</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>桥接模式 <a href="https://www.cnblogs.com/WindSun/p/10260547.html" target="_blank" rel="noopener">https://www.cnblogs.com/WindSun/p/10260547.html</a></p>
-<p>《JAVA与模式》之桥梁模式 <a href="https://www.cnblogs.com/java-my-life/archive/2012/05/07/2480938.html" target="_blank" rel="noopener">https://www.cnblogs.com/java-my-life/archive/2012/05/07/2480938.html</a></p>
-<p>《设计模式之禅》</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2502,7 +2485,7 @@
               
                 <a href="/go/archives%7C%7C%20archive">
               
-                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-count">28</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

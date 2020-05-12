@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/go/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/go/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/go/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/go/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/go/images/favicon-32x32-next.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/go/images/favicon-16x16-next.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/go/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言为了提高电池寿命，减少耗电，Android 系统在不断进行优化，本文只是简单的记录 Android6.0 到 Android 9.0 系统为了优化耗电所做的工作，并没有做过多的分析，如果需要看相关的详情，可以到官网查看。 Android 6Doze 低耗电模式 进入条件  用户未插接设备的电源，在屏幕关闭且静止的情况下，让设备在一段时间内保持不活动状态，那么设备就会进入低电耗模式  限制  在">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android 系统尝试耗电的措施">
+<meta property="og:url" content="https://rockstore.github.io/go/2020/05/12/android-framework-battery-sys-promote/index.html">
+<meta property="og:site_name" content="Rock">
+<meta property="og:description" content="前言为了提高电池寿命，减少耗电，Android 系统在不断进行优化，本文只是简单的记录 Android6.0 到 Android 9.0 系统为了优化耗电所做的工作，并没有做过多的分析，如果需要看相关的详情，可以到官网查看。 Android 6Doze 低耗电模式 进入条件  用户未插接设备的电源，在屏幕关闭且静止的情况下，让设备在一段时间内保持不活动状态，那么设备就会进入低电耗模式  限制  在">
+<meta property="article:published_time" content="2020-05-12T15:16:31.000Z">
+<meta property="article:modified_time" content="2020-05-12T15:20:08.064Z">
+<meta property="article:author" content="rockstore">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/go/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/12/android-framework-battery-sys-promote/"/>
+
+
+
+
+
+  <title>Android 系统尝试耗电的措施 | Rock</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/go/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Rock</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/go/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/go/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/go/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/12/android-framework-battery-sys-promote/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android 系统尝试耗电的措施</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-12T23:16:31+08:00">
+                2020-05-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/" itemprop="url" rel="index">
+                    <span itemprop="name">android</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/framework/" itemprop="url" rel="index">
+                    <span itemprop="name">framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/framework/%E8%80%97%E7%94%B5%E5%88%86%E6%9E%90/" itemprop="url" rel="index">
+                    <span itemprop="name">耗电分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>为了提高电池寿命，减少耗电，Android 系统在不断进行优化，本文只是简单的记录 Android6.0 到 Android 9.0 系统为了优化耗电所做的工作，并没有做过多的分析，如果需要看相关的详情，可以到官网查看。</p>
+<h2 id="Android-6"><a href="#Android-6" class="headerlink" title="Android 6"></a>Android 6</h2><h3 id="Doze-低耗电模式"><a href="#Doze-低耗电模式" class="headerlink" title="Doze 低耗电模式"></a>Doze 低耗电模式</h3><ul>
+<li>进入条件</li>
+</ul>
+<p>用户未插接设备的电源，在屏幕关闭且静止的情况下，让设备在一段时间内保持不活动状态，那么设备就会进入低电耗模式</p>
+<ul>
+<li>限制</li>
+</ul>
+<p>在低电耗模式下，系统会尝试通过限制应用访问占用大量网络和 CPU 资源的服务来节省电量。它还会阻止应用访问网络，并延迟其作业、同步和标准闹钟。</p>
+<p>（1）暂停访问网络。</p>
+<p>（2）系统忽略唤醒锁定。</p>
+<p>（3）标准 AlarmManager 闹钟（包括 setExact() 和 setWindow()）推迟到下一个维护期。</p>
+<p>a）如果您需要设置在设备处于低电耗模式时触发的闹钟，请使用 setAndAllowWhileIdle() 或 setExactAndAllowWhileIdle()。</p>
+<p>b）使用 setAlarmClock() 设置的闹钟将继续正常触发，系统会在这些闹钟触发之前不久退出低电耗模式。</p>
+<p>（4）系统不执行 WLAN 扫描。</p>
+<p>（5）系统不允许运行同步适配器。</p>
+<p>（6）系统不允许运行 JobScheduler。</p>
+<h3 id="应用待机模式"><a href="#应用待机模式" class="headerlink" title="应用待机模式"></a>应用待机模式</h3><ul>
+<li>进入条件</li>
+</ul>
+<p>应用待机模式允许系统判定应用在用户未主动使用它时是否处于闲置状态。当用户有一段时间未触摸应用时，系统便会作出此判定。</p>
+<ul>
+<li>退出和限制</li>
+</ul>
+<p>当用户将设备插入电源时，系统会从待机状态释放应用，允许它们自由访问网络并执行任何待处理的作业和同步。如果设备长时间处于闲置状态，系统将允许闲置应用访问网络，频率大约每天一次。</p>
+<ul>
+<li>排除条件</li>
+</ul>
+<p>（1）用户明确启动应用。</p>
+<p>（2）应用当前有一个进程在前台运行（作为活动或前台服务，或者正在由其他活动或前台服务使用）。<br>注意：您只能将前台服务用于用户希望系统立即执行或不中断的任务。此类情况包括将照片上传到社交媒体，或者即使在音乐播放器应用不在前台运行时也能播放音乐。您不应该只是为了阻止系统判定您的应用处于闲置状态而启动前台服务。</p>
+<p>（3）应用生成用户可在锁定屏幕或通知栏中看到的通知。</p>
+<p>（4）应用是正在使用中的设备管理应用（例如设备策略控制器）。虽然设备管理应用通常在后台运行，但永远不会进入应用待机模式，因为它们必须保持可用性，以便随时从服务器接收策略。</p>
+<h2 id="Android-7"><a href="#Android-7" class="headerlink" title="Android 7"></a>Android 7</h2><h3 id="增强了-Doze"><a href="#增强了-Doze" class="headerlink" title="增强了 Doze"></a>增强了 Doze</h3><p>通过在设备未插接电源且屏幕关闭状态下、但不一定要处于静止状态（例如用户外出时把手持式设备装在口袋里）时应用部分 CPU 和网络限制，进一步增强了低电耗模式。</p>
+<ul>
+<li>限制</li>
+</ul>
+<p>当设备处于充电状态且屏幕已关闭一定时间后，设备会进入低电耗模式并应用第一部分限制：关闭应用网络访问、推迟作业和同步。如果进入低电耗模式后设备处于静止状态达到一定时间，系统则会对 PowerManager.WakeLock、AlarmManager 闹铃、GPS 和 WLAN 扫描应用余下的低电耗模式限制。无论是应用部分还是全部低电耗模式限制，系统都会唤醒设备以提供简短的维护时间窗口，在此窗口期间，应用程序可以访问网络并执行任何被推迟的作业/同步。</p>
+<h3 id="移除了三项隐式广播"><a href="#移除了三项隐式广播" class="headerlink" title="移除了三项隐式广播"></a>移除了三项隐式广播</h3><p>CONNECTIVITY_ACTION<br>对于 target 7.0 的应用，通过静态注册的广播，无法接收到  CONNECTIVITY_ACTION 广播；应用无法接收到 ACTION_NEW_PICTURE 或 ACTION_NEW_VIDEO 的广播</p>
+<h2 id="Android-8"><a href="#Android-8" class="headerlink" title="Android 8"></a>Android 8</h2><h3 id="后台执行限制"><a href="#后台执行限制" class="headerlink" title="后台执行限制"></a>后台执行限制</h3><p>（1）前台应用</p>
+<p>a）具有可见 Activity（不管该 Activity 已启动还是已暂停）。</p>
+<p>b）具有前台 Service。</p>
+<p>c）另一个前台应用已关联到该应用（不管是通过绑定到其中一个 Service，还是通过使用其中一个内容提供程序）。 例如，如果另一个应用绑定到该应用的 Service，那么该应用处于前台：<br>IME<br>壁纸 Service<br>通知侦听器<br>语音或文本 Service</p>
+<ul>
+<li>限制</li>
+</ul>
+<p>处于前台时，应用可以自由创建和运行前台与后台 Service。 进入后台时，在一个持续数分钟的时间窗内，应用仍可以创建和使用 Service。 在该时间窗结束后，应用将被视为处于空闲状态。 此时，系统将停止应用的后台 Service，就像应用已经调用 Service 的 Service.stopSelf() 方法一样。</p>
+<p>在这些情况下，后台应用将被置于一个临时白名单中并持续数分钟。 位于白名单中时，应用可以无限制地启动 Service，并且其后台 Service 也可以运行。</p>
+<h3 id="后台位置限制"><a href="#后台位置限制" class="headerlink" title="后台位置限制"></a>后台位置限制</h3><p>降低了后台应用接收位置更新的频率</p>
+<h3 id="升级隐式广播限制"><a href="#升级隐式广播限制" class="headerlink" title="升级隐式广播限制"></a>升级隐式广播限制</h3><ul>
+<li>限制</li>
+</ul>
+<p>（1）适配 Android 8.0 或更高版本的应用无法继续在其清单中为隐式广播注册广播接收器。 隐式广播是一种不专门针对该应用的广播。 例如，ACTION_PACKAGE_REPLACED 就是一种隐式广播，因为该广播将被发送给所有已注册侦听器，让后者知道设备上的某些软件包已被替换。 不过，ACTION_MY_PACKAGE_REPLACED 不是隐式广播，因为不管已为该广播注册侦听器的其他应用有多少，它都会只被发送给软件包已被替换的应用。</p>
+<p>（2）应用可以继续在它们的清单中注册显式广播。</p>
+<p>（3）应用可以在运行时使用 Context.registerReceiver() 为任意广播（不管是隐式还是显式）注册接收器。</p>
+<p>（4）需要签名权限的广播不受此限制所限，因为这些广播只会发送到使用相同证书签名的应用，而不是发送到设备上的所有应用。</p>
+<p>以下链接可以查看隐式广播的例外<br><a href="https://developer.android.com/guide/components/broadcast-exceptions" target="_blank" rel="noopener">https://developer.android.com/guide/components/broadcast-exceptions</a></p>
+<h2 id="Android-9"><a href="#Android-9" class="headerlink" title="Android 9"></a>Android 9</h2><h3 id="电源管理"><a href="#电源管理" class="headerlink" title="电源管理"></a>电源管理</h3><h4 id="应用待机群组"><a href="#应用待机群组" class="headerlink" title="应用待机群组"></a>应用待机群组</h4><p>Android 9 引入了一项新的电池管理功能，即应用待机群组。 应用待机群组可以基于应用最近使用时间和使用频率，帮助系统排定应用请求资源的优先级。 根据使用模式，每个应用都会归类到五个优先级群组之一中。 系统将根据应用所属的群组限制每个应用可以访问的设备资源</p>
+<p>五个群组按照以下特性将应用分组：</p>
+<p><strong>活跃</strong></p>
+<p>如果用户当前正在使用应用，应用将被归到“活跃”群组中，例如：</p>
+<ul>
+<li>应用已启动一个 Activity</li>
+<li>应用正在运行前台服务</li>
+<li>应用的同步适配器与某个前台应用使用的 content provider 关联</li>
+<li>用户在应用中点击了某个通知</li>
+</ul>
+<p>如果应用处于“活跃”群组，系统不会对应用的作业、报警或 FCM 消息施加任何限制。</p>
+<p><strong>工作集</strong></p>
+<p>如果应用经常运行，但当前未处于活跃状态，它将被归到“工作集”群组中。 例如，用户在大部分时间都启动的某个社交媒体应用可能就属于“工作集”群组。 如果应用被间接使用，它们也会被升级到“工作集”群组中 。</p>
+<p>如果应用处于“工作集”群组，系统会对它运行作业和触发报警的能力施加轻度限制。 如需了解详细信息，请参阅电源管理限制。</p>
+<p>常用<br>如果应用会定期使用，但不是每天都必须使用，它将被归到“常用”群组中。 例如，用户在健身房运行的某个锻炼跟踪应用可能就属于“常用”群组。</p>
+<p>如果应用处于“常用”群组，系统将对它运行作业和触发报警的能力施加较强的限制，也会对高优先级 FCM 消息的数量设定限制。 如需了解详细信息，请参阅电源管理限制。</p>
+<p>极少使用<br>如果应用不经常使用，那么它属于“极少使用”群组。 例如，用户仅在入住酒店期间运行的酒店应用就可能属于“极少使用”群组。</p>
+<p>如果应用处于“极少使用”群组，系统将对它运行作业、触发警报和接收高优先级 FCM 消息的能力施加严格限制。系统还会限制应用连接到网络的能力。 如需了解详细信息，请参阅电源管理限制。</p>
+<p>从未使用<br>安装但是从未运行过的应用会被归到“从未使用”群组中。 系统会对这些应用施加极强的限制。</p>
+<p>以下链接可以查看电源管理限制<br><a href="https://developer.android.com/topic/performance/power/power-details" target="_blank" rel="noopener">https://developer.android.com/topic/performance/power/power-details</a></p>
+<h4 id="省电模式改进"><a href="#省电模式改进" class="headerlink" title="省电模式改进"></a>省电模式改进</h4><p>开启省电模式后，系统会对所有应用施加限制。 这是一项已有的功能，但在 Android 9 中得到了改进</p>
+<h3 id="后台对传感器的访问受限"><a href="#后台对传感器的访问受限" class="headerlink" title="后台对传感器的访问受限"></a>后台对传感器的访问受限</h3><p>Android 9 限制后台应用访问用户输入和传感器数据的能力。 如果您的应用在运行 Android 9 设备的后台运行，系统将对您的应用采取以下限制：</p>
+<ul>
+<li>您的应用不能访问麦克风或摄像头。</li>
+<li>使用连续报告模式的传感器（例如加速度计和陀螺仪）不会接收事件。</li>
+<li>使用变化或一次性报告模式的传感器不会接收事件。</li>
+</ul>
+<p>如果您的应用需要在运行 Android 9 的设备上检测传感器事件，请使用前台服务。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/go/2020/05/11/android-framework-battery-app/" rel="next" title="Android App 耗电计算">
+                <i class="fa fa-chevron-left"></i> Android App 耗电计算
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rockstore</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/go/archives%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/go/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/go/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Android-6"><span class="nav-number">2.</span> <span class="nav-text">Android 6</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Doze-低耗电模式"><span class="nav-number">2.1.</span> <span class="nav-text">Doze 低耗电模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应用待机模式"><span class="nav-number">2.2.</span> <span class="nav-text">应用待机模式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Android-7"><span class="nav-number">3.</span> <span class="nav-text">Android 7</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#增强了-Doze"><span class="nav-number">3.1.</span> <span class="nav-text">增强了 Doze</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#移除了三项隐式广播"><span class="nav-number">3.2.</span> <span class="nav-text">移除了三项隐式广播</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Android-8"><span class="nav-number">4.</span> <span class="nav-text">Android 8</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#后台执行限制"><span class="nav-number">4.1.</span> <span class="nav-text">后台执行限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#后台位置限制"><span class="nav-number">4.2.</span> <span class="nav-text">后台位置限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#升级隐式广播限制"><span class="nav-number">4.3.</span> <span class="nav-text">升级隐式广播限制</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Android-9"><span class="nav-number">5.</span> <span class="nav-text">Android 9</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#电源管理"><span class="nav-number">5.1.</span> <span class="nav-text">电源管理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#应用待机群组"><span class="nav-number">5.1.1.</span> <span class="nav-text">应用待机群组</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#省电模式改进"><span class="nav-number">5.1.2.</span> <span class="nav-text">省电模式改进</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#后台对传感器的访问受限"><span class="nav-number">5.2.</span> <span class="nav-text">后台对传感器的访问受限</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rockstore</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/go/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

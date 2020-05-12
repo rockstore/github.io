@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/go/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/go/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/go/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/go/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/go/images/favicon-32x32-next.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/go/images/favicon-16x16-next.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/go/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言Android 中对组件的耗电时间统计是由 BatteryStatusService 完成的，真正完成耗时统计的是类 BatteryStatsImpl 类。系统耗电排行中显示的耗电信息是通过 BatteryStatsHelper 类中相关的函数完成的。后面会分别分析 App 耗电和 硬件耗电，本文首先分析 App 耗电。 耗电计算App 耗电也称软件耗电，分别统计不同应用的耗电情况，系统通过">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android App 耗电计算">
+<meta property="og:url" content="https://rockstore.github.io/go/2020/05/11/android-framework-battery-app/index.html">
+<meta property="og:site_name" content="Rock">
+<meta property="og:description" content="前言Android 中对组件的耗电时间统计是由 BatteryStatusService 完成的，真正完成耗时统计的是类 BatteryStatsImpl 类。系统耗电排行中显示的耗电信息是通过 BatteryStatsHelper 类中相关的函数完成的。后面会分别分析 App 耗电和 硬件耗电，本文首先分析 App 耗电。 耗电计算App 耗电也称软件耗电，分别统计不同应用的耗电情况，系统通过">
+<meta property="article:published_time" content="2020-05-11T14:27:08.000Z">
+<meta property="article:modified_time" content="2020-05-11T14:29:23.646Z">
+<meta property="article:author" content="rockstore">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/go/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://rockstore.github.io/go/2020/05/11/android-framework-battery-app/"/>
+
+
+
+
+
+  <title>Android App 耗电计算 | Rock</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/go/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Rock</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/go/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/go/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/go/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/11/android-framework-battery-app/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android App 耗电计算</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-11T22:27:08+08:00">
+                2020-05-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/" itemprop="url" rel="index">
+                    <span itemprop="name">android</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/framework/" itemprop="url" rel="index">
+                    <span itemprop="name">framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/framework/%E8%80%97%E7%94%B5%E5%88%86%E6%9E%90/" itemprop="url" rel="index">
+                    <span itemprop="name">耗电分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Android 中对组件的耗电时间统计是由 BatteryStatusService 完成的，真正完成耗时统计的是类 BatteryStatsImpl 类。系统耗电排行中显示的耗电信息是通过 BatteryStatsHelper 类中相关的函数完成的。后面会分别分析 App 耗电和 硬件耗电，本文首先分析 App 耗电。</p>
+<h2 id="耗电计算"><a href="#耗电计算" class="headerlink" title="耗电计算"></a>耗电计算</h2><p>App 耗电也称软件耗电，分别统计不同应用的耗电情况，系统通过 BatterStatsHelper 的 processAppUsage 函数，去更新不同应用的耗电信息，然后显示其排行。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">processAppUsage</span><span class="params">(SparseArray&lt;UserHandle&gt; asUsers)</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> iu = <span class="number">0</span>; iu &lt; NU; iu++) &#123;</span><br><span class="line">		<span class="comment">// 统计每一个应用的耗电信息</span></span><br><span class="line">        <span class="keyword">final</span> Uid u = uidStats.valueAt(iu);</span><br><span class="line">        <span class="keyword">final</span> BatterySipper app = <span class="keyword">new</span> BatterySipper(BatterySipper.DrainType.APP, u, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// CPU </span></span><br><span class="line">        mCpuPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// WakeLock</span></span><br><span class="line">        mWakelockPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// 移动网络</span></span><br><span class="line">        mMobileRadioPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs,</span><br><span class="line">                mStatsType);</span><br><span class="line">		<span class="comment">// wifi</span></span><br><span class="line">        mWifiPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// 蓝牙</span></span><br><span class="line">        mBluetoothPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs,</span><br><span class="line">                mStatsType);</span><br><span class="line">		<span class="comment">// 传感器</span></span><br><span class="line">        mSensorPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// 相机</span></span><br><span class="line">        mCameraPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">		<span class="comment">// 闪光灯</span></span><br><span class="line">        mFlashlightPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs,</span><br><span class="line">                mStatsType);</span><br><span class="line">		<span class="comment">// 多媒体</span></span><br><span class="line">        mMediaPowerCalculator.calculateApp(app, u, mRawRealtimeUs, mRawUptimeUs, mStatsType);</span><br><span class="line">        <span class="comment">// 统计总的耗电</span></span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">double</span> totalPower = app.sumPower();</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有 Uid 类，可以将这个类的实例理解为一个应用， processAppUsage 函数循环遍历每一个应用，分别统计不同应用不同组件的耗电。每一个应用会分别计算应用的 CPU，Wakelock，移动网络，wifi，传感器，相机，闪光灯，多媒体的耗电情况，最后将这些组件的耗电相加便得到了应用的总耗电，前面已经分析过，Android 计算耗电实际上就是计算不同组件在不同状态的工作时间，下面在分析不同组件的耗电，也是沿着这样的思路。在分析每一个组件的耗电，只会列出最核心的代码，</p>
+<h2 id="组件耗电"><a href="#组件耗电" class="headerlink" title="组件耗电"></a>组件耗电</h2><h3 id="CPU"><a href="#CPU" class="headerlink" title="CPU"></a>CPU</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">            <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">        app.cpuTimeMs = (u.getUserCpuTimeUs(statsType) + u.getSystemCpuTimeUs(statsType)) / <span class="number">1000</span>;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> numClusters = mProfile.getNumCpuClusters();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">double</span> cpuPowerMaUs = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> cluster = <span class="number">0</span>; cluster &lt; numClusters; cluster++) &#123;</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">int</span> speedsForCluster = mProfile.getNumSpeedStepsInCpuCluster(cluster);</span><br><span class="line">            <span class="comment">// 计算不同主频下 CPU 的耗电</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> speed = <span class="number">0</span>; speed &lt; speedsForCluster; speed++) &#123;</span><br><span class="line">                <span class="keyword">final</span> <span class="keyword">long</span> timeUs = u.getTimeAtCpuSpeed(cluster, speed, statsType);</span><br><span class="line">                <span class="keyword">final</span> <span class="keyword">double</span> cpuSpeedStepPower = timeUs *</span><br><span class="line">                        mProfile.getAveragePowerForCpuCore(cluster, speed);</span><br><span class="line">                <span class="keyword">if</span> (DEBUG) &#123;</span><br><span class="line">                    Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": CPU cluster #"</span> + cluster + <span class="string">" step #"</span></span><br><span class="line">                            + speed + <span class="string">" timeUs="</span> + timeUs + <span class="string">" power="</span></span><br><span class="line">                            + BatteryStatsHelper.makemAh(cpuSpeedStepPower / MICROSEC_IN_HR));</span><br><span class="line">                &#125;</span><br><span class="line">                cpuPowerMaUs += cpuSpeedStepPower;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        cpuPowerMaUs += u.getCpuActiveTime() * <span class="number">1000</span> * mProfile.getAveragePower(</span><br><span class="line">                PowerProfile.POWER_CPU_ACTIVE);</span><br><span class="line">        <span class="keyword">long</span>[] cpuClusterTimes = u.getCpuClusterTimes();</span><br><span class="line">        <span class="comment">// 计算各个 Cluster 的平均耗电</span></span><br><span class="line">        <span class="keyword">if</span> (cpuClusterTimes != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (cpuClusterTimes.length == numClusters) &#123;</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; numClusters; i++) &#123;</span><br><span class="line">                    <span class="keyword">double</span> power =</span><br><span class="line">                            cpuClusterTimes[i] * <span class="number">1000</span> * mProfile.getAveragePowerForCpuCluster(i);</span><br><span class="line">                    cpuPowerMaUs += power;</span><br><span class="line">                    <span class="keyword">if</span> (DEBUG) &#123;</span><br><span class="line">                        Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": CPU cluster #"</span> + i + <span class="string">" clusterTimeUs="</span></span><br><span class="line">                                + cpuClusterTimes[i] + <span class="string">" power="</span></span><br><span class="line">                                + BatteryStatsHelper.makemAh(power / MICROSEC_IN_HR));</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                Log.w(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">" CPU cluster # mismatch: Power Profile # "</span></span><br><span class="line">                        + numClusters + <span class="string">" actual # "</span> + cpuClusterTimes.length);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        app.cpuPowerMah = cpuPowerMaUs / MICROSEC_IN_HR;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，CPU 耗电计算了 CPU 在不同核心在不同主频下的耗电，并将这些耗电相加。</p>
+<h3 id="Wakelock"><a href="#Wakelock" class="headerlink" title="Wakelock"></a>Wakelock</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> wakeLockTimeUs = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">final</span> ArrayMap&lt;String, ? extends BatteryStats.Uid.Wakelock&gt; wakelockStats =</span><br><span class="line">            u.getWakelockStats();</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> wakelockStatsCount = wakelockStats.size();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; wakelockStatsCount; i++) &#123;</span><br><span class="line">        <span class="keyword">final</span> BatteryStats.Uid.Wakelock wakelock = wakelockStats.valueAt(i);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Only care about partial wake locks since full wake locks</span></span><br><span class="line">        <span class="comment">// are canceled when the user turns the screen off.</span></span><br><span class="line">        BatteryStats.Timer timer = wakelock.getWakeTime(BatteryStats.WAKE_TYPE_PARTIAL);</span><br><span class="line">        <span class="keyword">if</span> (timer != <span class="keyword">null</span>) &#123;</span><br><span class="line">            wakeLockTimeUs += timer.getTotalTimeLocked(rawRealtimeUs, statsType);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    app.wakeLockTimeMs = wakeLockTimeUs / <span class="number">1000</span>; <span class="comment">// convert to millis</span></span><br><span class="line">    mTotalAppWakelockTimeMs += app.wakeLockTimeMs;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Add cost of holding a wake lock.</span></span><br><span class="line">    app.wakeLockPowerMah = (app.wakeLockTimeMs * mPowerWakelock) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    <span class="keyword">if</span> (DEBUG &amp;&amp; app.wakeLockPowerMah != <span class="number">0</span>) &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": wake "</span> + app.wakeLockTimeMs</span><br><span class="line">                + <span class="string">" power="</span> + BatteryStatsHelper.makemAh(app.wakeLockPowerMah));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Wakelock 的耗电逻辑比叫简单，但是这里有一个需要注意的位置，在统计 Wakelock 的耗电时，仅仅统计了 PARTIAL 类型的 Wakelock 的耗时，这就给我们使用 Wakelock 的策略提供了思路。</p>
+<h3 id="移动网络"><a href="#移动网络" class="headerlink" title="移动网络"></a>移动网络</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Add cost of mobile traffic.</span></span><br><span class="line">    app.mobileRxPackets = u.getNetworkActivityPackets(BatteryStats.NETWORK_MOBILE_RX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.mobileTxPackets = u.getNetworkActivityPackets(BatteryStats.NETWORK_MOBILE_TX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.mobileActive = u.getMobileRadioActiveTime(statsType) / <span class="number">1000</span>;</span><br><span class="line">    app.mobileActiveCount = u.getMobileRadioActiveCount(statsType);</span><br><span class="line">    app.mobileRxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_MOBILE_RX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.mobileTxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_MOBILE_TX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (app.mobileActive &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// We are tracking when the radio is up, so can use the active time to</span></span><br><span class="line">        <span class="comment">// determine power use.</span></span><br><span class="line">        mTotalAppMobileActiveMs += app.mobileActive;</span><br><span class="line">        app.mobileRadioPowerMah = (app.mobileActive * mPowerRadioOn) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// We are not tracking when the radio is up, so must approximate power use</span></span><br><span class="line">        <span class="comment">// based on the number of packets.</span></span><br><span class="line">        app.mobileRadioPowerMah = (app.mobileRxPackets + app.mobileTxPackets)</span><br><span class="line">                * getMobilePowerPerPacket(rawRealtimeUs, statsType);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (DEBUG &amp;&amp; app.mobileRadioPowerMah != <span class="number">0</span>) &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": mobile packets "</span></span><br><span class="line">                + (app.mobileRxPackets + app.mobileTxPackets)</span><br><span class="line">                + <span class="string">" active time "</span> + app.mobileActive</span><br><span class="line">                + <span class="string">" power="</span> + BatteryStatsHelper.makemAh(app.mobileRadioPowerMah));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>无线电耗电的计算分两种情况，如果 mobileActive &gt; 0 即 无线电处于 active 状态时，直接使用无线电处于 active 的时间乘以无线电在 active 时的功率 mPowerRadioOn 即可，如果未处于 active ，则使用收发的数据包数量乘以收发数据包的平均功率。</p>
+<h3 id="wifi"><a href="#wifi" class="headerlink" title="wifi"></a>wifi</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> BatteryStats.ControllerActivityCounter counter = u.getWifiControllerActivity();</span><br><span class="line">    <span class="keyword">if</span> (counter == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// wifi 处于空闲的时间</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> idleTime = counter.getIdleTimeCounter().getCountLocked(statsType);</span><br><span class="line">    <span class="comment">// wifi 发送数据包的时间</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> txTime = counter.getTxTimeCounters()[<span class="number">0</span>].getCountLocked(statsType);</span><br><span class="line">    <span class="comment">// wifi 接收数据包的时间</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> rxTime = counter.getRxTimeCounter().getCountLocked(statsType);</span><br><span class="line">    <span class="comment">// wifi 总运行时间</span></span><br><span class="line">    app.wifiRunningTimeMs = idleTime + rxTime + txTime;</span><br><span class="line">    mTotalAppRunningTime += app.wifiRunningTimeMs;</span><br><span class="line">    <span class="comment">// wifi 的总耗电</span></span><br><span class="line">    app.wifiPowerMah =</span><br><span class="line">            ((idleTime * mIdleCurrentMa) + (txTime * mTxCurrentMa) + (rxTime * mRxCurrentMa))</span><br><span class="line">            / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    mTotalAppPowerDrain += app.wifiPowerMah;</span><br><span class="line"></span><br><span class="line">    app.wifiRxPackets = u.getNetworkActivityPackets(BatteryStats.NETWORK_WIFI_RX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.wifiTxPackets = u.getNetworkActivityPackets(BatteryStats.NETWORK_WIFI_TX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.wifiRxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_WIFI_RX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line">    app.wifiTxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_WIFI_TX_DATA,</span><br><span class="line">            statsType);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (DEBUG &amp;&amp; app.wifiPowerMah != <span class="number">0</span>) &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"UID "</span> + u.getUid() + <span class="string">": idle="</span> + idleTime + <span class="string">"ms rx="</span> + rxTime + <span class="string">"ms tx="</span> +</span><br><span class="line">                txTime + <span class="string">"ms power="</span> + BatteryStatsHelper.makemAh(app.wifiPowerMah));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>wifi 的工作状态氛围空闲 idle，发送数据包 tx，接收数据包 如下，wifi 耗电的计算也分别计算了 wifi 在空闲，发送数据包和接收数据包时的耗电，最后计算了 wifi 收发的数据包。</p>
+<h3 id="蓝牙"><a href="#蓝牙" class="headerlink" title="蓝牙"></a>蓝牙</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.ControllerActivityCounter counter = u.getBluetoothControllerActivity();</span><br><span class="line">    <span class="keyword">if</span> (counter == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> idleTimeMs = counter.getIdleTimeCounter().getCountLocked(statsType);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> rxTimeMs = counter.getRxTimeCounter().getCountLocked(statsType);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> txTimeMs = counter.getTxTimeCounters()[<span class="number">0</span>].getCountLocked(statsType);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> totalTimeMs = idleTimeMs + txTimeMs + rxTimeMs;</span><br><span class="line">    <span class="keyword">double</span> powerMah = counter.getPowerCounter().getCountLocked(statsType)</span><br><span class="line">            / (<span class="keyword">double</span>)(<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (powerMah == <span class="number">0</span>) &#123;</span><br><span class="line">        powerMah = ((idleTimeMs * mIdleMa) + (rxTimeMs * mRxMa) + (txTimeMs * mTxMa))</span><br><span class="line">                / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    app.bluetoothPowerMah = powerMah;</span><br><span class="line">    app.bluetoothRunningTimeMs = totalTimeMs;</span><br><span class="line">    app.btRxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_BT_RX_DATA, statsType);</span><br><span class="line">    app.btTxBytes = u.getNetworkActivityBytes(BatteryStats.NETWORK_BT_TX_DATA, statsType);</span><br><span class="line"></span><br><span class="line">    mAppTotalPowerMah += powerMah;</span><br><span class="line">    mAppTotalTimeMs += totalTimeMs;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>蓝牙耗电的计算和 wifi 类似，蓝牙的工作状态也分为空闲 idle ，发送 tx，接收 rx，在计算蓝牙耗电时也分别计算了蓝牙在 idle ，tx，rx 时的耗电，最后将这些耗电进行相加。</p>
+<h3 id="传感器"><a href="#传感器" class="headerlink" title="传感器"></a>传感器</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Process Sensor usage</span></span><br><span class="line">    <span class="keyword">final</span> SparseArray&lt;? extends BatteryStats.Uid.Sensor&gt; sensorStats = u.getSensorStats();</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> NSE = sensorStats.size();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> ise = <span class="number">0</span>; ise &lt; NSE; ise++) &#123;</span><br><span class="line">        <span class="keyword">final</span> BatteryStats.Uid.Sensor sensor = sensorStats.valueAt(ise);</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> sensorHandle = sensorStats.keyAt(ise);</span><br><span class="line">        <span class="keyword">final</span> BatteryStats.Timer timer = sensor.getSensorTime();</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> sensorTime = timer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">switch</span> (sensorHandle) &#123;</span><br><span class="line">            <span class="keyword">case</span> BatteryStats.Uid.Sensor.GPS:</span><br><span class="line">                app.gpsTimeMs = sensorTime;</span><br><span class="line">                app.gpsPowerMah = (app.gpsTimeMs * mGpsPower) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">final</span> <span class="keyword">int</span> sensorsCount = mSensors.size();</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; sensorsCount; i++) &#123;</span><br><span class="line">                    <span class="keyword">final</span> Sensor s = mSensors.get(i);</span><br><span class="line">                    <span class="keyword">if</span> (s.getHandle() == sensorHandle) &#123;</span><br><span class="line">                        app.sensorPowerMah += (sensorTime * s.getPower()) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里传感器耗电分为两种：GPS ，其他传感器，GPS 的耗电记录在 PowerProfile.xml 文件中，保存在 mGpsPower 中，其他传感器的计算根据SensorManager得到所有传感器类型，这个里面保存有不同传感器的单位耗电量，这样就能计算不同传感器的耗电量。</p>
+<h3 id="相机"><a href="#相机" class="headerlink" title="相机"></a>相机</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Calculate camera power usage.  Right now, this is a (very) rough estimate based on the</span></span><br><span class="line">    <span class="comment">// average power usage for a typical camera application.</span></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.Timer timer = u.getCameraTurnedOnTimer();</span><br><span class="line">    <span class="keyword">if</span> (timer != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> totalTime = timer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line">        app.cameraTimeMs = totalTime;</span><br><span class="line">        app.cameraPowerMah = (totalTime * mCameraPowerOnAvg) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        app.cameraTimeMs = <span class="number">0</span>;</span><br><span class="line">        app.cameraPowerMah = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>相机的耗电首先计算出相机工作的时间，然后乘以相机的平均耗电。</p>
+<h3 id="闪光灯"><a href="#闪光灯" class="headerlink" title="闪光灯"></a>闪光灯</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Calculate flashlight power usage.  Right now, this is based on the average power draw</span></span><br><span class="line">    <span class="comment">// of the flash unit when kept on over a short period of time.</span></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.Timer timer = u.getFlashlightTurnedOnTimer();</span><br><span class="line">    <span class="keyword">if</span> (timer != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> totalTime = timer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line">        app.flashlightTimeMs = totalTime;</span><br><span class="line">        app.flashlightPowerMah = (totalTime * mFlashlightPowerOnAvg) / (<span class="number">1000</span>*<span class="number">60</span>*<span class="number">60</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        app.flashlightTimeMs = <span class="number">0</span>;</span><br><span class="line">        app.flashlightPowerMah = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>闪光灯的耗电和相机类似，先计算相机工作的时间，然后乘以相机的平均耗电。</p>
+<h3 id="多媒体"><a href="#多媒体" class="headerlink" title="多媒体"></a>多媒体</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateApp</span><span class="params">(BatterySipper app, BatteryStats.Uid u, <span class="keyword">long</span> rawRealtimeUs,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">long</span> rawUptimeUs, <span class="keyword">int</span> statsType)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Calculate audio power usage, an estimate based on the average power routed to different</span></span><br><span class="line">    <span class="comment">// components like speaker, bluetooth, usb-c, earphone, etc.</span></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.Timer audioTimer = u.getAudioTurnedOnTimer();</span><br><span class="line">    <span class="keyword">if</span> (audioTimer == <span class="keyword">null</span>) &#123;</span><br><span class="line">        app.audioTimeMs = <span class="number">0</span>;</span><br><span class="line">        app.audioPowerMah = <span class="number">0</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> totalTime = audioTimer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line">        app.audioTimeMs = totalTime;</span><br><span class="line">        app.audioPowerMah = (totalTime * mAudioAveragePowerMa) / MS_IN_HR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Calculate video power usage.</span></span><br><span class="line">    <span class="keyword">final</span> BatteryStats.Timer videoTimer = u.getVideoTurnedOnTimer();</span><br><span class="line">    <span class="keyword">if</span> (videoTimer == <span class="keyword">null</span>) &#123;</span><br><span class="line">        app.videoTimeMs = <span class="number">0</span>;</span><br><span class="line">        app.videoPowerMah = <span class="number">0</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> totalTime = videoTimer.getTotalTimeLocked(rawRealtimeUs, statsType) / <span class="number">1000</span>;</span><br><span class="line">        app.videoTimeMs = totalTime;</span><br><span class="line">        app.videoPowerMah = (totalTime * mVideoAveragePowerMa) / MS_IN_HR;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>多媒体耗电分别计算音频和视频的耗电，耗电的计算方法和闪光灯和相机类似，分别计算出工作时间，然后乘以平均能耗。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Android App 耗电的分析初步写完了。其实耗电的计算也没有那么复杂，和我们平时生活中的耗电计算的思路是相同的，唯一不同的是这里计算的是移动设备。</p>
+<p>Android 系统中，不同组件的耗电功率数据通过记录在文件 PowerProfile.xml 文件中，PowerProfile.xml 文件是进行耗电分析的基础，如果这个文件的数据有问题，那么我们的分析结果就是有问题，这也提醒我们，一些小的或者不知名的厂商，他们的耗电数据可能是不准确的。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/go/2020/05/11/android-collections-summary/" rel="next" title="Android 容器总结">
+                <i class="fa fa-chevron-left"></i> Android 容器总结
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/go/2020/05/12/android-framework-battery-sys-promote/" rel="prev" title="Android 系统尝试耗电的措施">
+                Android 系统尝试耗电的措施 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rockstore</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/go/archives%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/go/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/go/tags/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#耗电计算"><span class="nav-number">2.</span> <span class="nav-text">耗电计算</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#组件耗电"><span class="nav-number">3.</span> <span class="nav-text">组件耗电</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CPU"><span class="nav-number">3.1.</span> <span class="nav-text">CPU</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Wakelock"><span class="nav-number">3.2.</span> <span class="nav-text">Wakelock</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#移动网络"><span class="nav-number">3.3.</span> <span class="nav-text">移动网络</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#wifi"><span class="nav-number">3.4.</span> <span class="nav-text">wifi</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#蓝牙"><span class="nav-number">3.5.</span> <span class="nav-text">蓝牙</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#传感器"><span class="nav-number">3.6.</span> <span class="nav-text">传感器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#相机"><span class="nav-number">3.7.</span> <span class="nav-text">相机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#闪光灯"><span class="nav-number">3.8.</span> <span class="nav-text">闪光灯</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#多媒体"><span class="nav-number">3.9.</span> <span class="nav-text">多媒体</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rockstore</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/go/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/go/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/go/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/go/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/go/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
