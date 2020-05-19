@@ -257,7 +257,7 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/go/2020/05/15/android-framework-componet-jobscheduler/" itemprop="url">JobScheduler 原理分析</a></h1>
+                <a class="post-title-link" href="/go/2020/05/15/android-framework-componet-jobscheduler/" itemprop="url">JobService 原理分析</a></h1>
         
 
         <div class="post-meta">
@@ -321,6 +321,17 @@
 
                 
                 
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/android/framework/%E7%B3%BB%E7%BB%9F%E7%BB%84%E4%BB%B6/JobService/" itemprop="url" rel="index">
+                    <span itemprop="name">JobService</span>
+                  </a>
+                </span>
+
+                
+                
               
             </span>
           
@@ -353,7 +364,26 @@
       
         
           
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>JobScheduler 是在 android5.0 后引入的一个组件，在项目的保活场景中用到过，j</p>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>JobService 在之前做推送的时候遇到过，主要的作用基于给予系统的各种条件执行异步任务，实现保活功能。从本片开始，逐渐分析 JobService 。</p>
+<h2 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h2><p>本文就不介绍 JobService 的使用了，因为网上这样的文章还是比较多的，有一点需要注意的是 JobService 组件需要在清单文件中使用以下权限保护 android:permission=”android.permission.BIND_JOB_SERVICE”，否则是不会被系统调用的。</p>
+<p>JobService 的源码相当简单，这里我直接把源码贴出来</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">JobService</span> <span class="keyword">extends</span> <span class="title">Service</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String TAG = <span class="string">"JobService"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String PERMISSION_BIND =</span><br><span class="line">            <span class="string">"android.permission.BIND_JOB_SERVICE"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> JobServiceEngine mEngine;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** <span class="doctag">@hide</span> */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (mEngine == <span class="keyword">null</span>) &#123;</span><br><span class="line">            mEngine = <span class="keyword">new</span> JobServiceEngine(<span class="keyword">this</span>) &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onStartJob</span><span class="params">(JobParameters params)</span> </span>&#123;</span><br><span class="line">                    <span class="keyword">return</span> JobService.<span class="keyword">this</span>.onStartJob(params);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onStopJob</span><span class="params">(JobParameters params)</span> </span>&#123;</span><br><span class="line">                    <span class="keyword">return</span> JobService.<span class="keyword">this</span>.onStopJob(params);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> mEngine.getBinder();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">jobFinished</span><span class="params">(JobParameters params, <span class="keyword">boolean</span> wantsReschedule)</span> </span>&#123;</span><br><span class="line">        mEngine.jobFinished(params, wantsReschedule);</span><br><span class="line">    &#125;</span><br><span class="line">  </span><br><span class="line">  	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">boolean</span> <span class="title">onStartJob</span><span class="params">(JobParameters params)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">boolean</span> <span class="title">onStopJob</span><span class="params">(JobParameters params)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，JobService 就是是 Service ，并且提供了 bind 的方法进行绑定，只是添加了一下几个方法。</p>
+<ul>
+<li><p>jobFinished</p>
+<p>应用执行完后主动调用，通知 JobScheduler ，wantsReschedule 表示执行完成后是否还需要系统继续规划执行，如果为 true ，则规划的执行时间受退避规则限制</p>
+</li>
+<li><p>onStartJob</p>
+<p>子类需要实现此方法，以便在服务开始执行时执行自己的业务逻辑。此方法执行在应用的主线程，故需要考虑阻塞的问题；方法的返回值表示方法返回后服务是否还需要继续执行，true 表示需要继续执行，返回 true 后，如果想停止服务，则需要调用 jobFinished 函数或者系统当前的状态已经无法满足最开始设置的服务运行的条件。还有一点需要注意的时，在服务被即将被调用之前，系统将会获取应用的 WakeLock，WakeLock 会一直存在直到调用 jobFinished 或者 onStopJob</p>
+</li>
+<li><p>onStopJob</p>
+<p>子类需要实现此方法，当系统认为当前系统的状态已经不满足服务的运行后，系统会主动调用此方法，调用此方法后，系统持有应用的锁 WakeLock 也会被释放。</p>
+</li>
+</ul>
+<p>介绍完 JobService 的三个方法后，发现 JobService 的原理其实蛮简单，但是回过头再看下，这还有一个类 JobServiceEngine 未分析。JobServiceEngnie 类的实例是在 onBind 中新建的，JobService 的 onStartJob 和 onStopJob 方法也是在 JobServiceEngine 对应的方法中被调用的，onBind 方法最终返回 mEngine.getBinder() ，说明 JobServiceEngnie 的 getBinder 方法返回了 Binder 实例，用于进行进程通信。</p>
+<p>这个 Binder 实例会被谁获取呢？当然是被 JobScheduler 获取了，JobScheduler 通过这个 Binder 实例进行跨进程通信，首先调用 JobServiceEngine 的 onStartJob 或者 onStopJob 方法，JobServiceEngine 会相应调用 JobService 的 onStartJob 和 onStopJob 方法。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文比较简单，梳理了 JobService 的结构，并大致了解了 JobService 中 onStartJob 和 onStopJob 方法的调用链，下篇文章将会详细分析 JobService onStartJob 和 onStopJob 方法被调用的整个 过程。</p>
 
           
         
@@ -2675,7 +2705,7 @@ public V put(K key, V value) {
               
               <div class="site-state-item site-state-categories">
                 <a href="/go/categories/index.html">
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">8</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
