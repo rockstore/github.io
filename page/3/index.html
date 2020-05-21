@@ -238,6 +238,706 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-template/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/05/design-pattern-template/" itemprop="url">模板模式</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T10:00:13+08:00">
+                2020-05-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
+                    <span itemprop="name">设计模式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="模板模式"><a href="#模板模式" class="headerlink" title="模板模式"></a>模板模式</h1><h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>《Android 源码与设计模式》一书中这样定义了模板模式：定义一个操作中的算法框架，而将一些步骤延迟到子类中实现，使得子类在不改变一个算法的结构即可重新定义该算法的某些特定步骤。<br>其实可以简单地总结：<strong>父类定义流程，子类实现流程中的细节。</strong></p>
+<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/template.png" alt=""><br>如上图所示，父类定义流程即在 AbstractTemplate 类中，template 方法定义自己的逻辑流程：abstractMethod()-&gt;hookMethod-&gt;concreteMethod()，可以看到，父类仅仅实现了 concreteMethod 方法，并且提供了 hookMethod 方法的默认空实现，但是没有实现 abstractMethod 方法。子类 ConcreteTemplate 在继承 AbstractTemplate 后，必须要实现 abstractMethod 方法。可以发现，子类在继承的过程中，并没有改变 template 方法的执行框架和流程，仅仅是根据自己的需求实现了 abstractMethod 方法。接下来总结一下模板模式中的两个角色：抽象模板、具体模板。</p>
+<h3 id="抽象模板"><a href="#抽象模板" class="headerlink" title="抽象模板"></a>抽象模板</h3><p>抽象模板负责定义模板方法，抽象方法，钩子方法以及具体方法。其中的模板方法定义了业务逻辑的执行流程；抽象方法为每个具体业务必须要实现的方法；钩子方法中，一般情况下，父类为子类提供了默认的空实现，子类可以根据自己的业务需求去定义。</p>
+<h3 id="具体模板"><a href="#具体模板" class="headerlink" title="具体模板"></a>具体模板</h3><p>具体模板继承抽象模板，实现抽象方法或者重写钩子方法</p>
+<h2 id="简单实现"><a href="#简单实现" class="headerlink" title="简单实现"></a>简单实现</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractTemplate</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">template</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		abstractMethod();</span><br><span class="line">		hookMethod();</span><br><span class="line">		concreteMethod();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">abstractMethod</span><span class="params">()</span></span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">hookMethod</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"AbstractTemplate hookMethod"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">concreteMethod</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"AbstractTemplate concreateMethod"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConcreteTemplate</span> <span class="keyword">extends</span> <span class="title">AbstractTemplate</span> </span>&#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">abstractMethod</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteTemplate abstractMethod"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">hookMethod</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ConcreteTemplate hookMethod"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">	AbstractTemplate templateDemo = <span class="keyword">new</span> ConcreteTemplate();</span><br><span class="line">	templateDemo.template();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>程序执行结果如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ConcreteTemplate abstractMethod</span><br><span class="line">ConcreteTemplate hookMethod</span><br><span class="line">AbstractTemplate concreateMethod</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="在-Android-上的使用"><a href="#在-Android-上的使用" class="headerlink" title="在 Android 上的使用"></a>在 Android 上的使用</h2><p>Android 上模板模式的最常见使用场景可能就是 AsyncTask 类了。首先大致回顾下 AsyncTask 的执行流程。在这儿就不对源码进行展开了， 下表列出了在不同执行条件下 AsyncTask 下不同方法的执行流程</p>
+<table>
+<thead>
+<tr>
+<th>执行条件</th>
+<th>执行流程</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>doInBackground 中未执行 publishProgress</td>
+<td>onPreExecute-&gt;doInBackground-&gt;onPostExecute</td>
+</tr>
+<tr>
+<td>doInBackground 中执行 publishProgress</td>
+<td>onPreExecute-&gt;doInBackground-&gt;onProgressUpdate-&gt;onPostExecute</td>
+</tr>
+<tr>
+<td>doInBackground 中未执行 publishProgress，调用 cancel 方法</td>
+<td>onPreExecute-&gt;doInBackgrounde-&gt;onCanceled</td>
+</tr>
+<tr>
+<td>doInBackground 中执行 publishProgress，调用 cancel 方法</td>
+<td>onPreExecute-&gt;doInBackgrounde-&gt;onProgressUpdate-&gt;onCanceled</td>
+</tr>
+</tbody></table>
+<p>以上执行流程是在 AsyncTask 类型定义好了，我们在实现具体的 AsyncTask 时，只需要在不同的流程中，根据自己的业务逻辑做处理即可，因此，AsyncTask 的框架是一个模板模式标准应用。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>模板模式是一种相对来说比较简单的设计模式，理解模板模式需要理解它的精髓：<strong>父类定义框架流程，子类负责具体逻辑，子类可以对父类的部分方法进行重写，但是不能改变父类定义的框架流程</strong></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-visitor/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/05/design-pattern-visitor/" itemprop="url">访问者模式</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T09:59:08+08:00">
+                2020-05-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
+                    <span itemprop="name">设计模式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="访问者模式"><a href="#访问者模式" class="headerlink" title="访问者模式"></a>访问者模式</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>访问者模式是一种行为模式，是比较复杂的一种设计模式，相较于单例、工厂、抽象工厂等常用的设计模式，访问者模式在平时开发过程中用到的也比较少，但在合理的场景选择访问者模式会让系统扩展性大大提高。 ASM 对字节码的修改用到了访问者模式，本文会基于 ASM 对字节码的修改做访问者模式的使用分析。</p>
+<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>在《 Android 源码设计模式解析与实战》中，是这样定义访问者模式的：封装一些作用于某种数据结构中各元素的操作，它可以在不改变这个数据结构的前提下定义作用于这些元素的操作。不改变数据结构的意思是数据结构保持稳定，修改较少，至于为什么，后面会有说明。</p>
+<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><ul>
+<li>对象结构比较稳定，经常需要在此对象结构上定义新的操作。</li>
+<li>需要对一个对象结构中的对象进行很多不同的且不相关的操作，而需要避免这些操作“污染”这些对象的类，也不希望在增加新操作时修改这些类。</li>
+</ul>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>在实现之前，先不给出访问者模式的 UML 类图，实现完成后再进行总结。</p>
+<p>现在有这样一个模拟需求：有华为和苹果两种品牌的手机，男性消费者在选择苹果时，优先考虑苹果手机的价格，在选择华为时，优先考虑华为手机的性能；女性消费者在选择苹果时，优先考虑苹果手机的外观，在选在华为时优先考虑华为手机的价格。现在有一定数量不同型号的苹果和华为手机，销售想知道男性消费者对当前华为手机定价的反馈以及女性消费者对苹果手机屏幕大小的反馈。</p>
+<p>既然是分析访问者，就用访问者模式实现以下这个需求。</p>
+<p>首先定义手机的抽象父类：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">MobilePhone</span> </span>&#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">int</span> price;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">accept</span><span class="params">(Consumer visitor)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p> MobilePhone 定义了公共属性手机价格 price , 并定义了 accept 方法。Consumer 类会在后面进行说明。</p>
+<p>定义 IPhone 类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">IPhone</span> <span class="keyword">extends</span> <span class="title">MobilePhone</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">int</span> size;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">IPhone</span><span class="params">(<span class="keyword">int</span> price, <span class="keyword">int</span> size)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		<span class="keyword">super</span>.price = price;</span><br><span class="line">		<span class="keyword">this</span>.size = size;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">accept</span><span class="params">(Consumer consumer)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		consumer.visit(<span class="keyword">this</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p> IPhone 类扩展了 MobilePhone 类，定义了屏幕尺寸 size 属性，并实现了 accept 方法</p>
+<p>定义 HwPhone 类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HwPhone</span> <span class="keyword">extends</span> <span class="title">MobilePhone</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">int</span> performance;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">HwPhone</span><span class="params">(<span class="keyword">int</span> price, <span class="keyword">int</span> performance)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		<span class="keyword">super</span>.price = price;</span><br><span class="line">		<span class="keyword">this</span>.performance = performance;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">accept</span><span class="params">(Consumer visitor)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		visitor.visit(<span class="keyword">this</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>HwPhone 类扩展了 MobilePhone 类，并定义了属性性能 performance</p>
+<p>接下来就需要定义消费者了，首先定义消费者的基类 Consumer</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Consumer</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visit</span><span class="params">(IPhone phone)</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visit</span><span class="params">(HwPhone phone)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>定义男性消费者 ManConsumer </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ManConsumer</span> <span class="keyword">implements</span> <span class="title">Consumer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visit</span><span class="params">(IPhone phone)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"man-consumer focus price of iphone:"</span> + phone.price + <span class="string">" too expensive"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visit</span><span class="params">(HwPhone phone)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		String msg = phone.performance &gt; <span class="number">100000</span> ? <span class="string">" good"</span> : <span class="string">" bad"</span>;</span><br><span class="line">		System.out.println(<span class="string">"man-consumer focus performance of hwphone:"</span> + phone.performance + msg);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>定义女性消费者 WomanConsumer</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">WomanConsumer</span> <span class="keyword">implements</span> <span class="title">Consumer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visit</span><span class="params">(IPhone phone)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		String msg = phone.size &gt; <span class="number">7</span> ? <span class="string">" good"</span> : <span class="string">" bad"</span>;</span><br><span class="line">		System.out.println(<span class="string">"woman-consumers focus on size of iphone:"</span> + phone.size + msg);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visit</span><span class="params">(HwPhone phone)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"woman-consumers focus on price of hwphone:"</span> + phone.price + <span class="string">" unworthy"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>既然是调研任务，就把调研任务做一下封装，并添加模拟数据</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Report</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> ArrayList&lt;MobilePhone&gt; mobilePhones = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Report</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		IPhone phone6 = <span class="keyword">new</span> IPhone(<span class="number">5000</span>, <span class="number">6</span>);</span><br><span class="line">		IPhone phone7 = <span class="keyword">new</span> IPhone(<span class="number">6000</span>, <span class="number">8</span>);</span><br><span class="line">		</span><br><span class="line">		HwPhone honor9 = <span class="keyword">new</span> HwPhone(<span class="number">1500</span>, <span class="number">100000</span>);</span><br><span class="line">		HwPhone honor10 = <span class="keyword">new</span> HwPhone(<span class="number">2300</span>, <span class="number">200000</span>);</span><br><span class="line">		</span><br><span class="line">		mobilePhones.add(phone6);</span><br><span class="line">		mobilePhones.add(phone7);</span><br><span class="line">		mobilePhones.add(honor9);</span><br><span class="line">		mobilePhones.add(honor10);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">showResult</span><span class="params">(Consumer consumer)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (MobilePhone phone : mobilePhones) &#123;</span><br><span class="line">			phone.accept(consumer);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>最后添加一下测试代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">		Report report = <span class="keyword">new</span> Report();</span><br><span class="line">		</span><br><span class="line">		WomanConsumer womanConsumer = <span class="keyword">new</span> WomanConsumer();</span><br><span class="line">		report.showResult(womanConsumer);</span><br><span class="line">		</span><br><span class="line">		System.out.println();</span><br><span class="line">		</span><br><span class="line">		ManConsumer manConsumer = <span class="keyword">new</span> ManConsumer();</span><br><span class="line">		report.showResult(manConsumer);</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>程序运行结果如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">woman-consumers focus on size of iphone:<span class="number">6</span> bad</span><br><span class="line">woman-consumers focus on size of iphone:<span class="number">8</span> good</span><br><span class="line">woman-consumers focus on price of hwphone:<span class="number">1500</span> unworthy</span><br><span class="line">woman-consumers focus on price of hwphone:<span class="number">2300</span> unworthy</span><br><span class="line"></span><br><span class="line">man-consumer focus price of iphone:<span class="number">5000</span> too expensive</span><br><span class="line">man-consumer focus price of iphone:<span class="number">6000</span> too expensive</span><br><span class="line">man-consumer focus performance of hwphone:<span class="number">100000</span> bad</span><br><span class="line">man-consumer focus performance of hwphone:<span class="number">200000</span> good</span><br></pre></td></tr></table></figure>
+
+<p>进行测试时，分别生成了一个男性消费者 manConsumer 和一个女性消费者 womanConsumer ，然后让这两个消费者分别看了（执行 accept 方法）苹果和华为手机，并根据两种手机的尺寸和价格作出评价（执行 visit 函数）。</p>
+<p>给出实现的 uml 结构图</p>
+<p><img src="http://p0.qhimg.com/t01893144855515aca9.png" alt=""></p>
+<p>其实这一模拟需求，不使用访问者模式也可以实现，可能跟我想的一样，直接使用循环的方式，实现的 uml 如下：</p>
+<p><img src="http://p0.qhimg.com/t01bf959da4be6ef620.png" alt=""></p>
+<p>使用上述方式进行实现， Consumer 对象在遍历访问 MobilePhone 对象时，由于男性消费者 ManConsumer 更加关注华为手机 HwPhone 的性能，而 IPhone 手机又没有 performance 属性，故需要对 MobilePhone 对象进行强制类型转换，女性消费者在遍历的时候同样也会面临这一问题。</p>
+<p>假设现在系统中出现 Oppo 手机，用户比较关注手机的拍照和音乐功能，使用这种方式实现时，需要增加新的类型转换；如果系统中突然出现大量主打不同特性的手机，在进行遍历时就会增加大量 if-else 判断。</p>
+<p>使用访问者模式时，如果增加新的手机品牌，只需要在 Consumer 接口中增加新的 visit 函数即可，系统结构更加清晰，灵活度更高。</p>
+<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="http://p0.qhimg.com/t018960ce5e8164de30.png" alt=""></p>
+<p>以上是访问者模式的标准实现，对结构进行分析，可以抽象出以下部分：</p>
+<ul>
+<li><p>Visitor</p>
+<p>接口或者是抽象类，它的方法定义了每一个 ConcreteVisitor 的访问行为，方法的参数为 Element 的子类。</p>
+</li>
+<li><p>ConcreteVisitor</p>
+<p>具体的访问者，定义针对每种具体 Element 的访问行为。</p>
+</li>
+<li><p>Element</p>
+<p>被访问元素的基类，定义了 accept 的方法，表示每一个子类都可以被 Visitor 访问。</p>
+</li>
+<li><p>ConcrementElement</p>
+<p>具体的被访问元素。</p>
+</li>
+<li><p>ObjectStructure</p>
+<p>元素的管理单元，一般是元素的集合。</p>
+</li>
+</ul>
+<p>在 前面的定义中，说了“在不改变数据结构的前提下”，为什么需要有这个前提呢？这就要从 ConcreteVisitor 开始分析。每一个 ConcreteVisitor 在被定义后，它的访问行为就会被确定，它的访问行为会严重依赖 Element 的实现，可以参考前面的实现和后面 Android中访问者模式的使用章节。比如在实现章节中， ManConsumer 依赖 HwPhone 的 performance 属性，如果在后面的设计中需要对 performance 属性修改， 则 ManConsumer 必须要进行修改。因此，在使用访问者模式进行设计时，需要考虑被访问的元素是否存在频繁修改的可能性。</p>
+<h2 id="Android-中访问者模式的使用"><a href="#Android-中访问者模式的使用" class="headerlink" title="Android 中访问者模式的使用"></a>Android 中访问者模式的使用</h2><p>Android 中访问者模式的使用不是很好找，本文从 HtmlDocument 类入手，分析 HtmlDocument 的构建过程，了解访问者模式在 Android 中的使用， 涉及到的类文件都在 com.android.mail.lib.html.parser 包中。</p>
+<p>HtmlDocument 表示 Html 文档，包含了文本( Text )，标签( Tag )，结束标签( EndTag )，注释( Comment )等元素，所有的这些元素称为节点( Node )，Node 定义了抽象的 accept 方法，所有的子类都需要实现此方法，接受 Visitor 的调用，HtmlDocument 包含一个 Node 的集合。 Node 的定义如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Node</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** Accepts a visitor */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">accept</span><span class="params">(Visitor visitor)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** Converts to HTML */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toHTML</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      StringBuilder sb = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">      toHTML(sb);</span><br><span class="line">      <span class="keyword">return</span> sb.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** Converts to HTML */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">toHTML</span><span class="params">(StringBuilder sb)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** Converts to XHTML */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toXHTML</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      StringBuilder sb = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">      toXHTML(sb);</span><br><span class="line">      <span class="keyword">return</span> sb.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** Converts to XHTML */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">toXHTML</span><span class="params">(StringBuilder sb)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> Original if it's available; otherwise, returns</span></span><br><span class="line"><span class="comment">     * &lt;code&gt;toHTML()&lt;/code&gt;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toOriginalHTML</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      StringBuilder sb = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">      toOriginalHTML(sb);</span><br><span class="line">      <span class="keyword">return</span> sb.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> sb Destination of HTML to be appended.  Appends original if it's</span></span><br><span class="line"><span class="comment">     * available; otherwise, appends &lt;code&gt;toHTML()&lt;/code&gt;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">toOriginalHTML</span><span class="params">(StringBuilder sb)</span></span>;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>Node 基类定义了所有节点都需要实现的方法，不同的节点如 Text 会定义自己的方法，以便让访问者获取对应的信息。</p>
+<p>HtmlDocument 定义了访问者需要实现的接口 Visitor :</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">interface</span> <span class="title">Visitor</span> </span>&#123;</span><br><span class="line">    <span class="comment">/** This is called first */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">start</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** A text node */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">visitText</span><span class="params">(Text n)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** An open tag */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">visitTag</span><span class="params">(Tag n)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** End tag */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">visitEndTag</span><span class="params">(EndTag n)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** comment */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">visitComment</span><span class="params">(Comment n)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Called at the end. */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">finish</span><span class="params">()</span></span>;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>为了构造一个完整的 HtmlDocument 文档，需要遍历 html 文件，然后在遍历过程成将遍历到的节点添加到 Node 集合中。HtmlDocument 的内部类 Builder 实现了 Visitor 接口，在遍历过程中将节点添加到 Node 集合中。 可以看下 HtmlDocument.Builder 的实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Builder</span> <span class="keyword">implements</span> <span class="title">Visitor</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">boolean</span> preserveComments;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> List&lt;Node&gt; nodes = <span class="keyword">new</span> ArrayList&lt;Node&gt;();</span><br><span class="line">    <span class="keyword">private</span> HtmlDocument doc;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@see</span> Builder#Builder(boolean)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Builder</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      <span class="keyword">this</span>(<span class="keyword">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> preserveComments If false, ignores Comment nodes</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Builder</span><span class="params">(<span class="keyword">boolean</span> preserveComments)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">this</span>.preserveComments = preserveComments;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addNode</span><span class="params">(Node node)</span> </span>&#123;</span><br><span class="line">      nodes.add(node);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">start</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visitText</span><span class="params">(Text t)</span> </span>&#123;</span><br><span class="line">      addNode(t);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visitTag</span><span class="params">(Tag t)</span> </span>&#123;</span><br><span class="line">      addNode(t);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visitComment</span><span class="params">(Comment n)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (preserveComments) &#123;</span><br><span class="line">        addNode(n);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visitEndTag</span><span class="params">(EndTag t)</span> </span>&#123;</span><br><span class="line">      addNode(t);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">finish</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      doc = <span class="keyword">new</span> HtmlDocument(nodes);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** Gets the html document that has been constructed */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> HtmlDocument <span class="title">getDocument</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> doc;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>在 Builder 的内部存在一个 Node 集合 nodes ，在遍历过程中， visitXXX 方法将节点添加到 nodes 中，遍历完成后（执行 finish 方法），根据 nodes 构建一个 HtmlDocument 对象。</p>
+<p>可以看下 HtmlDocument ， Node， Text ， Tag ， EndTag ， HtmlDocument.Builder 之间的关系。</p>
+<p><img src="http://p0.qhimg.com/t018c5e67cc558562a0.png" alt=""></p>
+<p>Visitor 的实现中还添加了 HtmlDocument.VisitorWrapper， HtmlDocument.DebugPrinter， HtmlTreeBuilder 类，可以自行参考源码分析一下。</p>
+<h2 id="ASM-中访问者模式的使用"><a href="#ASM-中访问者模式的使用" class="headerlink" title="ASM 中访问者模式的使用"></a>ASM 中访问者模式的使用</h2><p>分析 ASM 中的访问者模式，需要了解 ASM 对 class 文件的修改流程。为了便于进行跨平台， class 文件被设计成了固定的格式</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">ClassFile &#123; </span><br><span class="line">    u4 magic; </span><br><span class="line">    u2 minor_version; </span><br><span class="line">    u2 major_version; </span><br><span class="line">    u2 constant_pool_count; </span><br><span class="line">    cp_info constant_pool[constant_pool_count-<span class="number">1</span>]; </span><br><span class="line">    u2 access_flags; </span><br><span class="line">    u2 this_class; </span><br><span class="line">    u2 super_class; </span><br><span class="line">    u2 interfaces_count; </span><br><span class="line">    u2 interfaces[interfaces_count]; </span><br><span class="line">    u2 fields_count; </span><br><span class="line">    field_info fields[fields_count]; </span><br><span class="line">    u2 methods_count; </span><br><span class="line">    method_info methods[methods_count]; </span><br><span class="line">    u2 attributes_count; </span><br><span class="line">    attribute_info attributes[attributes_count]; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>class 文件的格式是固定的，也就是说数据结构不发生变化。接下来就来分下 ASM 对 class 文件的修改流程。使用 ASM 对 class 文件修改，需要 ClassReader 负责读取 class 文件， 自定义 ClassVisitor 对 class 进行修改， ClassWriter 输出修改后的 class 。 ClassReader 调用 accept 方法开始 visitXXX 方法的调用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// class 文件</span></span><br><span class="line"><span class="keyword">byte</span> [] classFile;</span><br><span class="line">ClassReader cr = <span class="keyword">new</span> ClassReader(classFile);</span><br><span class="line">ClassWriter cw = <span class="keyword">new</span> ClassWriter(<span class="number">0</span>);</span><br><span class="line">CustomVisitor cv = <span class="keyword">new</span> CustomVisitor(Opcodes.ASM6, cw);</span><br><span class="line">cr.accept(cv, <span class="number">0</span>);</span><br><span class="line"><span class="keyword">byte</span> [] result = cw.toByteArray();</span><br></pre></td></tr></table></figure>
+
+<p>以上是使用 ASM 修改字节码的简单的 流程 demo , 流程为 ClassReader 读取 class 文件的字节数组 classFile ,  自定义的 Visitor cv 负责修改字节码，通过责任链最终调用会转发到 ClassWriter cw  ，最后调用 cw.toByteArray 方法获得修改后的字节数组。</p>
+<p>为了明白其中的访问者模式，需要看下 accept 方法的实现，代码量比较多，但是跟着注释，逻辑线很清晰。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">accept</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> ClassVisitor classVisitor,</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> Attribute[] attributePrototypes,</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> <span class="keyword">int</span> parsingOptions)</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="comment">// visit class 声明</span></span><br><span class="line">    classVisitor.visit(</span><br><span class="line">        readInt(cpInfoOffsets[<span class="number">1</span>] - <span class="number">7</span>), accessFlags, thisClass, signature, superClass, interfaces);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the SourceFile and SourceDebugExtenstion attributes.</span></span><br><span class="line">    <span class="keyword">if</span> ((parsingOptions &amp; SKIP_DEBUG) == <span class="number">0</span></span><br><span class="line">        &amp;&amp; (sourceFile != <span class="keyword">null</span> || sourceDebugExtension != <span class="keyword">null</span>)) &#123;</span><br><span class="line">      classVisitor.visitSource(sourceFile, sourceDebugExtension);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the Module, ModulePackages and ModuleMainClass attributes.</span></span><br><span class="line">    <span class="keyword">if</span> (moduleOffset != <span class="number">0</span>) &#123;</span><br><span class="line">      readModuleAttributes(</span><br><span class="line">          classVisitor, context, moduleOffset, modulePackagesOffset, moduleMainClass);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the NestHost attribute.</span></span><br><span class="line">    <span class="keyword">if</span> (nestHostClass != <span class="keyword">null</span>) &#123;</span><br><span class="line">      classVisitor.visitNestHost(nestHostClass);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the EnclosingMethod attribute.</span></span><br><span class="line">    <span class="keyword">if</span> (enclosingMethodOffset != <span class="number">0</span>) &#123;</span><br><span class="line">      String className = readClass(enclosingMethodOffset, charBuffer);</span><br><span class="line">      <span class="keyword">int</span> methodIndex = readUnsignedShort(enclosingMethodOffset + <span class="number">2</span>);</span><br><span class="line">      String name = methodIndex == <span class="number">0</span> ? <span class="keyword">null</span> : readUTF8(cpInfoOffsets[methodIndex], charBuffer);</span><br><span class="line">      String type = methodIndex == <span class="number">0</span> ? <span class="keyword">null</span> : readUTF8(cpInfoOffsets[methodIndex] + <span class="number">2</span>, charBuffer);</span><br><span class="line">      classVisitor.visitOuterClass(className, name, type);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the RuntimeVisibleAnnotations attribute.</span></span><br><span class="line">    <span class="keyword">if</span> (runtimeVisibleAnnotationsOffset != <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">int</span> numAnnotations = readUnsignedShort(runtimeVisibleAnnotationsOffset);</span><br><span class="line">      <span class="keyword">int</span> currentAnnotationOffset = runtimeVisibleAnnotationsOffset + <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">while</span> (numAnnotations-- &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// Parse the type_index field.</span></span><br><span class="line">        String annotationDescriptor = readUTF8(currentAnnotationOffset, charBuffer);</span><br><span class="line">        currentAnnotationOffset += <span class="number">2</span>;</span><br><span class="line">        <span class="comment">// Parse num_element_value_pairs and element_value_pairs and visit these values.</span></span><br><span class="line">        currentAnnotationOffset =</span><br><span class="line">            readElementValues(</span><br><span class="line">                classVisitor.visitAnnotation(annotationDescriptor, <span class="comment">/* visible = */</span> <span class="keyword">true</span>),</span><br><span class="line">                currentAnnotationOffset,</span><br><span class="line">                <span class="comment">/* named = */</span> <span class="keyword">true</span>,</span><br><span class="line">                charBuffer);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the RuntimeInvisibleAnnotations attribute.</span></span><br><span class="line">    <span class="keyword">if</span> (runtimeInvisibleAnnotationsOffset != <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">int</span> numAnnotations = readUnsignedShort(runtimeInvisibleAnnotationsOffset);</span><br><span class="line">      <span class="keyword">int</span> currentAnnotationOffset = runtimeInvisibleAnnotationsOffset + <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">while</span> (numAnnotations-- &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// Parse the type_index field.</span></span><br><span class="line">        String annotationDescriptor = readUTF8(currentAnnotationOffset, charBuffer);</span><br><span class="line">        currentAnnotationOffset += <span class="number">2</span>;</span><br><span class="line">        <span class="comment">// Parse num_element_value_pairs and element_value_pairs and visit these values.</span></span><br><span class="line">        currentAnnotationOffset =</span><br><span class="line">            readElementValues(</span><br><span class="line">                classVisitor.visitAnnotation(annotationDescriptor, <span class="comment">/* visible = */</span> <span class="keyword">false</span>),</span><br><span class="line">                currentAnnotationOffset,</span><br><span class="line">                <span class="comment">/* named = */</span> <span class="keyword">true</span>,</span><br><span class="line">                charBuffer);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the RuntimeVisibleTypeAnnotations attribute.</span></span><br><span class="line">    <span class="keyword">if</span> (runtimeVisibleTypeAnnotationsOffset != <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">int</span> numAnnotations = readUnsignedShort(runtimeVisibleTypeAnnotationsOffset);</span><br><span class="line">      <span class="keyword">int</span> currentAnnotationOffset = runtimeVisibleTypeAnnotationsOffset + <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">while</span> (numAnnotations-- &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// Parse the target_type, target_info and target_path fields.</span></span><br><span class="line">        currentAnnotationOffset = readTypeAnnotationTarget(context, currentAnnotationOffset);</span><br><span class="line">        <span class="comment">// Parse the type_index field.</span></span><br><span class="line">        String annotationDescriptor = readUTF8(currentAnnotationOffset, charBuffer);</span><br><span class="line">        currentAnnotationOffset += <span class="number">2</span>;</span><br><span class="line">        <span class="comment">// Parse num_element_value_pairs and element_value_pairs and visit these values.</span></span><br><span class="line">        currentAnnotationOffset =</span><br><span class="line">            readElementValues(</span><br><span class="line">                classVisitor.visitTypeAnnotation(</span><br><span class="line">                    context.currentTypeAnnotationTarget,</span><br><span class="line">                    context.currentTypeAnnotationTargetPath,</span><br><span class="line">                    annotationDescriptor,</span><br><span class="line">                    <span class="comment">/* visible = */</span> <span class="keyword">true</span>),</span><br><span class="line">                currentAnnotationOffset,</span><br><span class="line">                <span class="comment">/* named = */</span> <span class="keyword">true</span>,</span><br><span class="line">                charBuffer);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the RuntimeInvisibleTypeAnnotations attribute.</span></span><br><span class="line">    <span class="keyword">if</span> (runtimeInvisibleTypeAnnotationsOffset != <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">int</span> numAnnotations = readUnsignedShort(runtimeInvisibleTypeAnnotationsOffset);</span><br><span class="line">      <span class="keyword">int</span> currentAnnotationOffset = runtimeInvisibleTypeAnnotationsOffset + <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">while</span> (numAnnotations-- &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// Parse the target_type, target_info and target_path fields.</span></span><br><span class="line">        currentAnnotationOffset = readTypeAnnotationTarget(context, currentAnnotationOffset);</span><br><span class="line">        <span class="comment">// Parse the type_index field.</span></span><br><span class="line">        String annotationDescriptor = readUTF8(currentAnnotationOffset, charBuffer);</span><br><span class="line">        currentAnnotationOffset += <span class="number">2</span>;</span><br><span class="line">        <span class="comment">// Parse num_element_value_pairs and element_value_pairs and visit these values.</span></span><br><span class="line">        currentAnnotationOffset =</span><br><span class="line">            readElementValues(</span><br><span class="line">                classVisitor.visitTypeAnnotation(</span><br><span class="line">                    context.currentTypeAnnotationTarget,</span><br><span class="line">                    context.currentTypeAnnotationTargetPath,</span><br><span class="line">                    annotationDescriptor,</span><br><span class="line">                    <span class="comment">/* visible = */</span> <span class="keyword">false</span>),</span><br><span class="line">                currentAnnotationOffset,</span><br><span class="line">                <span class="comment">/* named = */</span> <span class="keyword">true</span>,</span><br><span class="line">                charBuffer);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the non standard attributes.</span></span><br><span class="line">    <span class="keyword">while</span> (attributes != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="comment">// Copy and reset the nextAttribute field so that it can also be used in ClassWriter.</span></span><br><span class="line">      Attribute nextAttribute = attributes.nextAttribute;</span><br><span class="line">      attributes.nextAttribute = <span class="keyword">null</span>;</span><br><span class="line">      classVisitor.visitAttribute(attributes);</span><br><span class="line">      attributes = nextAttribute;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the NestedMembers attribute.</span></span><br><span class="line">    <span class="keyword">if</span> (nestMembersOffset != <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">int</span> numberOfNestMembers = readUnsignedShort(nestMembersOffset);</span><br><span class="line">      <span class="keyword">int</span> currentNestMemberOffset = nestMembersOffset + <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">while</span> (numberOfNestMembers-- &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        classVisitor.visitNestMember(readClass(currentNestMemberOffset, charBuffer));</span><br><span class="line">        currentNestMemberOffset += <span class="number">2</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the InnerClasses attribute.</span></span><br><span class="line">    <span class="keyword">if</span> (innerClassesOffset != <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">int</span> numberOfClasses = readUnsignedShort(innerClassesOffset);</span><br><span class="line">      <span class="keyword">int</span> currentClassesOffset = innerClassesOffset + <span class="number">2</span>;</span><br><span class="line">      <span class="keyword">while</span> (numberOfClasses-- &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        classVisitor.visitInnerClass(</span><br><span class="line">            readClass(currentClassesOffset, charBuffer),</span><br><span class="line">            readClass(currentClassesOffset + <span class="number">2</span>, charBuffer),</span><br><span class="line">            readUTF8(currentClassesOffset + <span class="number">4</span>, charBuffer),</span><br><span class="line">            readUnsignedShort(currentClassesOffset + <span class="number">6</span>));</span><br><span class="line">        currentClassesOffset += <span class="number">8</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the fields and methods.</span></span><br><span class="line">    <span class="keyword">int</span> fieldsCount = readUnsignedShort(currentOffset);</span><br><span class="line">    currentOffset += <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">while</span> (fieldsCount-- &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      currentOffset = readField(classVisitor, context, currentOffset);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> methodsCount = readUnsignedShort(currentOffset);</span><br><span class="line">    currentOffset += <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">while</span> (methodsCount-- &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      currentOffset = readMethod(classVisitor, context, currentOffset);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Visit the end of the class.</span></span><br><span class="line">    classVisitor.visitEnd();</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>accept 的代码有点多，不过看代码的逻辑很清晰，就是不断读取 ClassFile 的文件结构，然后根据文件结构调用对用的 ClassVisitor 的 visitXXX 方法。将上面的代码抽离一下，可以发现就是根据 ClassFile 的文件结构调用了 ClassVisitor 的以下方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">visit();</span><br><span class="line">visitSource();</span><br><span class="line">visitOuterClass();</span><br><span class="line">visitAnnotation();</span><br><span class="line">visitTypeAnnotation();</span><br><span class="line">visitAttribute();</span><br><span class="line">visitInnerClass();</span><br><span class="line">visitField();</span><br><span class="line">visitMethod();</span><br><span class="line">visitEnd();</span><br></pre></td></tr></table></figure>
+
+<p>调用这些方法后，最终的 class 文件是如何被修改的呢？在 accept 方法体中， clssVisitor 实例是我们自定义的 CustomVisitor 。跟踪一下 visitFiled 方法， visitField 方法负责分析访问 class 文件的属性声明，执行 CustomVisitor 的 visitField 时，我们可以根据自己的逻辑，修改 visitField 里的参数以达到修改属性的目的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">classVisitor.visitField(accessFlags, name, descriptor, signature, constantValue);</span><br></pre></td></tr></table></figure>
+
+<p>以上是 accept 方法体内的一个 visitField 方法调用，参数分别是 属性的访问标识，名称，描述，签名以及常量值。继续跟踪下 visitField 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> FieldVisitor <span class="title">visitField</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> <span class="keyword">int</span> access,</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> String name,</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> String descriptor,</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> String signature,</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">final</span> Object value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (cv != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> cv.visitField(access, name, descriptor, signature, value);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>前面申明 CustomVisitor 时，传递了 ClassWriter 作为参数，故此处的 cv 就是 ClassWriter 。ok， 再看下 ClassWriter 的 visitField 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> FieldVisitor <span class="title">visitField</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">final</span> <span class="keyword">int</span> access,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">final</span> String name,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">final</span> String descriptor,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">final</span> String signature,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">final</span> Object value)</span> </span>&#123;</span><br><span class="line">    FieldWriter fieldWriter =</span><br><span class="line">        <span class="keyword">new</span> FieldWriter(symbolTable, access, name, descriptor, signature, value);</span><br><span class="line">    <span class="keyword">if</span> (firstField == <span class="keyword">null</span>) &#123;</span><br><span class="line">        firstField = fieldWriter;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        lastField.fv = fieldWriter;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> lastField = fieldWriter;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行完 ClassWriter 的 visitField 方法后， 属性声明就被 ClassWriter 已链表的方式保存起来。</p>
+<p>经过修改后，调用 ClassWriter 的 toByteArray 方法，获得修改后的 class 文件的字节码数组。toByteArray 的代码就不做分析了，主要作用就是根据调用的 visitXXX 方法后记录的 class 文件结构，输出修改后的 byte 数组。</p>
+<p>ASM 充分利用了 class 文件格式基本不会改变的特性。 ClassReader 通过读取整个 class 文件，可以将 ClassReader 理解为 访问者模式中的存储元素集合的位置， ClassWriter 和我们自定义的 ClassVisitor 是 Visitor 的具体实现。ClassReader 在不断遍历 class 文件的元素时会根据 class 文件的结构不断调用 ClassVisitor 对应的 visitXXX 方法， ClassVisitor 的 visitXXX 方法负责对 class 文件对应的元素进行修改，最终的修改会通过责任链的形式转发到 ClassWriter 的 visitXXX 方法中， ClassWriter 的 visitXXX 方法会记录最终的修改。最后调用 ClassWriter 的 toByteArray 方法输出修改后的 class 文件的字节数组表示。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>使用访问者模式，使得数据结构和作用于数据上的操作解耦，基于当前的数据结构添加新的操作非常容易，具有优秀的扩展，系统层次清晰。但访问者模式限制了对数据结构的修改，如果需要修改数据结构，西东需要做较大的改动；使用访问者模式时，需要暴露数据结构，违反了迪米特法则；还可以发现，我们在定义 Visitor 接口中的方法时，所有的 visit 接口均依赖具体的类，而不是抽象。</p>
+<p>在尝试使用访问者模式时，需要修改考虑的系统中的数据结构是否经常变化，如果数据结构基本不会发生改变，且针对数据结构的操作需要区分具体的类型，就可以考虑使用访问者模式。</p>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p>   1.《 Android 源码设计模式解析与实战》</p>
+<p>   2.访问者模式讨论篇：java的动态绑定与双分派</p>
+<pre><code>http://www.importnew.com/15574.html</code></pre><p>   3.Java字节码处理框架ASM设计思想解析</p>
+<pre><code>https://www.jianshu.com/p/26e99d39b3fb</code></pre><p>   4.设计模式之访问者模式</p>
+<pre><code>https://blog.csdn.net/u012124438/article/details/70537203</code></pre><p>   5.JAVA设计模式（23）：行为型-访问者模式（Visitor）</p>
+<pre><code>https://blog.csdn.net/taozi8023/article/details/51457616</code></pre><p>   6.《JAVA设计模式》之访问者模式( Visitor )</p>
+<pre><code>https://www.cnblogs.com/betterboyz/p/9378093.html</code></pre>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-proxy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rockstore">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/go/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Rock">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/go/2020/05/05/design-pattern-proxy/" itemprop="url">代理模式</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-05T09:42:38+08:00">
+                2020-05-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
+                    <span itemprop="name">设计模式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="代理"><a href="#代理" class="headerlink" title="代理"></a>代理</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>代理模式是一种结构型模式。使用代理模式可以让代理操作真实对象，屏蔽真实对象的执行细节，可以在真实对象执行具体操作之前做一些”额外”操作。</p>
+<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>为对象提供一种代理以便控制这个对象的访问。</p>
+<h2 id="UML"><a href="#UML" class="headerlink" title="UML"></a>UML</h2><p><img src="http://p0.qhimg.com/t0114b01ae5ac94bf7e.png" alt=""></p>
+<p>ReadObject 和 ProxyObject 都继承实现了 AbstractObject ( AbstractObject 可以是类，也可以是接口 )，ProxyObject 对象保存了 RealObject 对象的实例。Client 使用 RealObject 对象调用 operation 方法时，使用 ProxyObject 实例进行代理调用。 </p>
+<h2 id="静态代理"><a href="#静态代理" class="headerlink" title="静态代理"></a>静态代理</h2><p>静态代理是指在程序运行之前，代理类已经确定，静态代理示例如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RealObject</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"RealObject executes operation"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProxyObject</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> RealObject realObject;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ProxyObject</span><span class="params">(RealObject object)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		realObject = object;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"ProxyObject executes before RealObject operation"</span>);</span><br><span class="line">		realObject.operation();</span><br><span class="line">		System.out.println(<span class="string">"ProxyObject executes after RealObject operation"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">    RealObject realObject = <span class="keyword">new</span> RealObject();</span><br><span class="line">    ProxyObject proxyObject = <span class="keyword">new</span> ProxyObject(realObject);</span><br><span class="line">    proxyObject.operation();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>程序运行结果如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ProxyObject executes before RealObject operation</span><br><span class="line">RealObject executes operation</span><br><span class="line">ProxyObject executes after RealObject operation</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="动态代理"><a href="#动态代理" class="headerlink" title="动态代理"></a>动态代理</h2><p>静态代理的代理类在编译时已经生成，动态代理比静态代理思想更近了一步，动态代理的代理类在程序运行时创建。可以先看一代码实现，再分析其中的原理。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RealObject</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">"RealObject executes operation"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用动态代理，需要定义自己的 InvocationHandler 实现</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyProxyHandler</span> <span class="keyword">implements</span> <span class="title">InvocationHandler</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> Object mObject;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyProxyHandler</span><span class="params">(Object obj)</span> </span>&#123;</span><br><span class="line">        mObject = obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    	System.out.println(<span class="string">"---before invoke---"</span>);</span><br><span class="line">        Object object = method.invoke(mObject, args);</span><br><span class="line">        System.out.println(<span class="string">"---after invoke---"</span>);</span><br><span class="line">        <span class="keyword">return</span> object;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最后看下该如何使用动态代理</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">    ClassLoader classLoader = IObject<span class="class">.<span class="keyword">class</span>.<span class="title">getClassLoader</span>()</span>;</span><br><span class="line">    MyProxyHandler handler = <span class="keyword">new</span> MyProxyHandler(<span class="keyword">new</span> RealObject());</span><br><span class="line">    IObject proxyObject = (IObject) Proxy.newProxyInstance(classLoader, <span class="keyword">new</span> Class [] &#123;IObject<span class="class">.<span class="keyword">class</span>&#125;, <span class="title">handler</span>)</span>;</span><br><span class="line">    proxyObject.operation();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>程序运行结果如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">---before invoke---</span><br><span class="line">RealObject executes operation</span><br><span class="line">---after invoke---</span><br></pre></td></tr></table></figure>
+
+<p>到这里可能会有疑惑， Proxy.newProxyInstance 究竟做了什么，如何动态生成代理类，代理调用时如何转发到 MyProxyHandler 的 invoke 方法呢？带着这些疑问，深入 Proxy.newProxyInstance 函数看看。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Object <span class="title">newProxyInstance</span><span class="params">(ClassLoader loader,</span></span></span><br><span class="line"><span class="function"><span class="params">                                          Class&lt;?&gt;[] interfaces,</span></span></span><br><span class="line"><span class="function"><span class="params">                                          InvocationHandler h)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> IllegalArgumentException</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        ......</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> Class&lt;?&gt;[] intfs = interfaces.clone();</span><br><span class="line">        ......</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 获取代理类的 Class</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        Class&lt;?&gt; cl = getProxyClass0(loader, intfs);</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 调用代理类的构造函数（参数为 InvocationHandler 实例）新建代理类实例，并返回实例</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ......</span><br><span class="line">            <span class="keyword">final</span> Constructor&lt;?&gt; cons = cl.getConstructor(constructorParams);</span><br><span class="line">            <span class="keyword">final</span> InvocationHandler ih = h;</span><br><span class="line">            ...... </span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> cons.newInstance(<span class="keyword">new</span> Object[]&#123;h&#125;);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IllegalAccessException|InstantiationException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> InternalError(e.toString(), e);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvocationTargetException e) &#123;</span><br><span class="line">            ......</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchMethodException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> InternalError(e.toString(), e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>constructorParams 的声明如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Class&lt;?&gt;[] constructorParams = &#123; InvocationHandler<span class="class">.<span class="keyword">class</span> &#125;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>newProxyInstance 的逻辑比较简单，两个步骤：根据传入的接口 Class 数组构造代理 Class；调用代理 Class 的构造函数新建代理类实例。先看下第一步的 getProxyClass0 函数：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Class&lt;?&gt; getProxyClass0(ClassLoader loader,</span><br><span class="line">                                           Class&lt;?&gt;... interfaces) &#123;</span><br><span class="line">        <span class="keyword">if</span> (interfaces.length &gt; <span class="number">65535</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"interface limit exceeded"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// If the proxy class defined by the given loader implementing</span></span><br><span class="line">        <span class="comment">// the given interfaces exists, this will simply return the cached copy;</span></span><br><span class="line">        <span class="comment">// otherwise, it will create the proxy class via the ProxyClassFactory</span></span><br><span class="line">        <span class="keyword">return</span> proxyClassCache.get(loader, interfaces);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断了传入的接口数量是否大于65535，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> WeakCache&lt;ClassLoader, Class&lt;?&gt;[], Class&lt;?&gt;&gt;</span><br><span class="line">        proxyClassCache = <span class="keyword">new</span> WeakCache&lt;&gt;(<span class="keyword">new</span> KeyFactory(), <span class="keyword">new</span> ProxyClassFactory());</span><br></pre></td></tr></table></figure>
+
+<p>proxyClassCache 的类型为 WeakCache（不了解的同学可以先了解一下）， proxyClassCache 调用 get 函数，如果缓存里有需要的 Class 直接返回，否则调用 ProxyClassFactory 的 apply 方法新建 Class 并放在缓存中。跟踪下 ProxyClassFactory 的 apply 函数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> Class&lt;?&gt; apply(ClassLoader loader, Class&lt;?&gt;[] interfaces) &#123;</span><br><span class="line">            ......</span><br><span class="line">            String proxyPkg = <span class="keyword">null</span>;     <span class="comment">// package to define proxy class in</span></span><br><span class="line">            <span class="keyword">int</span> accessFlags = Modifier.PUBLIC | Modifier.FINAL;</span><br><span class="line">            ......</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (proxyPkg == <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="comment">// if no non-public proxy interfaces, use com.sun.proxy package</span></span><br><span class="line">                proxyPkg = ReflectUtil.PROXY_PACKAGE + <span class="string">"."</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * Choose a name for the proxy class to generate.</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">long</span> num = nextUniqueNumber.getAndIncrement();</span><br><span class="line">            String proxyName = proxyPkg + proxyClassNamePrefix + num;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * Generate the specified proxy class.</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">byte</span>[] proxyClassFile = ProxyGenerator.generateProxyClass(</span><br><span class="line">                proxyName, interfaces, accessFlags);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> defineClass0(loader, proxyName,</span><br><span class="line">                                    proxyClassFile, <span class="number">0</span>, proxyClassFile.length);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (ClassFormatError e) &#123;</span><br><span class="line">                <span class="comment">/*</span></span><br><span class="line"><span class="comment">                 * A ClassFormatError here means that (barring bugs in the</span></span><br><span class="line"><span class="comment">                 * proxy class generation code) there was some other</span></span><br><span class="line"><span class="comment">                 * invalid aspect of the arguments supplied to the proxy</span></span><br><span class="line"><span class="comment">                 * class creation (such as virtual machine limitations</span></span><br><span class="line"><span class="comment">                 * exceeded).</span></span><br><span class="line"><span class="comment">                 */</span></span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(e.toString());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面保留了核心代码，在生成 Class 时，最终调用了 ProxyGenerator.generateProxyClass 生成了字节码文件，然后调用 defineClass0 函数生成 Class 对象。本文不关注 ProxyGenerator.generateProxyClass 的实现原理，后面分析 ProxyGenerator.generateProxyClass 函数生成的 class 文件。最终默认生成的 class 文件包名为为： proxyPkg  ， proxyPkg 为 ReflectUtil.PROXY_PACKAGE( com.sun.proxy )，默认最终生成的类名为：$Proxy + num。最终生成的代理类是什么样的呢？</p>
+<p>能不能看到动态生成的代理类呢？在运行程序之前添加 sun.misc.ProxyGenerator.saveGeneratedFiles=true 配置，即可看到输出的 class 文件。看下上面示例代码生成的 class 文件：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> $<span class="title">Proxy0</span> <span class="keyword">extends</span> <span class="title">Proxy</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m1;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m3;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m2;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m0;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> $Proxy0(InvocationHandler var1) <span class="keyword">throws</span>  &#123;</span><br><span class="line">        <span class="keyword">super</span>(var1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object var1)</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> (Boolean)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m1, <span class="keyword">new</span> Object[]&#123;var1&#125;);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var3;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var4) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var4);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m3, (Object[])<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var2;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var3);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> String <span class="title">toString</span><span class="params">()</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> (String)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m2, (Object[])<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var2;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var3);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> (Integer)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m0, (Object[])<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var2;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var3);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            m1 = Class.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"equals"</span>, Class.forName(<span class="string">"java.lang.Object"</span>));</span><br><span class="line">            m3 = Class.forName(<span class="string">"com.rock.dynamic_proxy.IObject"</span>).getMethod(<span class="string">"operation"</span>);</span><br><span class="line">            m2 = Class.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"toString"</span>);</span><br><span class="line">            m0 = Class.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"hashCode"</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchMethodException var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoSuchMethodError(var2.getMessage());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoClassDefFoundError(var3.getMessage());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码没有做任何删减，可以看到生成的代理类 class 文件实现了 IObject 接口，并实现了 operation 函数。构造函数传递了 InvocationHandler 实例。m3 是接口 IObject 定义的 operation 函数。生成代理 $Proxy0 的实例调用 operation 函数时会最终调用 InvocationHandler 实例的 operation 函数。</p>
+<h2 id="代理细分"><a href="#代理细分" class="headerlink" title="代理细分"></a>代理细分</h2><p>静态代理和动态代理是从代码的角度对代理进行区分，从适用场景可以对代理进行以下分类：</p>
+<ul>
+<li><p>远程代理</p>
+<p>为对象在不同的内存地址空间提供局部代理，使系统可以将 Server 部分隐藏，以便 Client 可以不必考虑 Server 的存在。</p>
+</li>
+<li><p>虚拟代理</p>
+<p>使用一个代理表示一个十分消耗资源的对象，只有在真正使用的时候才创建真是对象。</p>
+</li>
+<li><p>保护代理</p>
+<p>使用代理控制对原始对象的访问，该类型的代理常被用于被代理对象有不同的访问权限。</p>
+</li>
+<li><p>智能引用</p>
+<p>在访问原始对象时执行一些自己的附加操作，并对指向原始对象的引用计数。</p>
+</li>
+</ul>
+<h2 id="Android-中代理的使用"><a href="#Android-中代理的使用" class="headerlink" title="Android 中代理的使用"></a>Android 中代理的使用</h2><p>Android 的 Binder 机制经常被拿来介绍 Andoid 中的代理模式，本文也以 Binder 机制介绍。使用 Binder 机制分析 Android 中的代理机制，本文以 使用 aidl 进行跨进程调用作为分析的切入点，本节重点分析代理部分，对 Binder 机制分析的很少。</p>
+<p>需求很简单：进程 A 跨进程调用进程 B 的方法 getPid 返回进程 B 的进程 ID ，进程 B 是一个 Service ， 进程 A 和进程 B 分别位于 Android Studio 的 Client 和 Server 模块中。</p>
+<p>首先定义 aidl 文件</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// IPidInterface.aidl</span></span><br><span class="line"><span class="keyword">package</span> com.rock.proxydemo;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Declare any non-default types here with import statements</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">IPidInterface</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Demonstrates some basic types that you can use as parameters</span></span><br><span class="line"><span class="comment">     * and return values in AIDL.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">basicTypes</span><span class="params">(<span class="keyword">int</span> anInt, <span class="keyword">long</span> aLong, <span class="keyword">boolean</span> aBoolean, <span class="keyword">float</span> aFloat,</span></span></span><br><span class="line"><span class="function"><span class="params">            <span class="keyword">double</span> aDouble, String aString)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">getPid</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代理接口就添加了一个 getPid 函数。将 aidl 文件拷贝到 B 所在的 module 的源码目录（ aidl 文件在 Client 和 Server 中要有相同的目录），然后在 Server 中添加 ProxyService ：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProxyService</span> <span class="keyword">extends</span> <span class="title">Service</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">ProxyService</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// <span class="doctag">TODO:</span> Return the communication channel to the service.</span></span><br><span class="line">        <span class="keyword">return</span> mBinder;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate();</span><br><span class="line">        Log.d(<span class="string">"remote_proxy_pid"</span>, <span class="string">"ProxyService onCreate"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onDestroy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onDestroy();</span><br><span class="line">        Log.d(<span class="string">"remote_proxy_pid"</span>, <span class="string">"ProxyService onDestory"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> IPidInterface.Stub mBinder = <span class="keyword">new</span> IPidInterface.Stub() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">basicTypes</span><span class="params">(<span class="keyword">int</span> anInt, <span class="keyword">long</span> aLong, <span class="keyword">boolean</span> aBoolean, <span class="keyword">float</span> aFloat, <span class="keyword">double</span> aDouble, String aString)</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getPid</span><span class="params">()</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> Process.myPid();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>逻辑很简单，声明了 IPidInterface.Stub 的实例 mBinder ，在 getPid 函数中返回了当前进程的 pid 。ProxyService 的注册内容如下：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&lt;service</span><br><span class="line">    android:name=<span class="string">".ProxyService"</span></span><br><span class="line">    android:enabled=<span class="string">"true"</span></span><br><span class="line">    android:exported=<span class="string">"true"</span>&gt;</span><br><span class="line">    &lt;intent-filter&gt;</span><br><span class="line">        &lt;action android:name="com.rock.proxyserver.ProxyService"&gt;&lt;/action&gt;</span><br><span class="line">    &lt;/intent-filter&gt;</span><br><span class="line">&lt;/service&gt;</span><br></pre></td></tr></table></figure>
+
+<p>ok，服务端已经完成，接下来就看下客户端模块的调用过程了</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> IPidInterface mRemoteService;</span><br><span class="line"><span class="keyword">private</span> ServiceConnection mServiceConn = <span class="keyword">new</span> ServiceConnection() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceConnected</span><span class="params">(ComponentName name, IBinder service)</span> </span>&#123;</span><br><span class="line">        mRemoteService = IPidInterface.Stub.asInterface(service);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceDisconnected</span><span class="params">(ComponentName name)</span> </span>&#123;</span><br><span class="line">        mRemoteService = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 连接远程服务 ProxyService</span></span><br><span class="line">Intent intent = <span class="keyword">new</span> Intent();</span><br><span class="line">intent.setAction(<span class="string">"com.rock.proxyserver.ProxyService"</span>);</span><br><span class="line">intent.setPackage(<span class="string">"com.rock.proxyserver"</span>);</span><br><span class="line">bindService(intent, mServiceConn, Context.BIND_AUTO_CREATE);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 调用逻辑</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">showPid</span><span class="params">(View view)</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mRemoteService != <span class="keyword">null</span>) &#123;</span><br><span class="line">        Log.d(<span class="string">"remote_proxy_pid"</span>, mRemoteService.getPid() + <span class="string">""</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        Log.d(<span class="string">"remote_proxy_pid"</span>, <span class="string">"can not get remote pid"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>经过以上流程，首先运行 Server ，然后运行 Client ，就能通过跨进程调用的方式获取 Server 所在的进程 pid 。</p>
+<p>既然是在分析代理，那这一过程是如何体现代理的呢？</p>
+<p>aidl 文件会经过编译后，会自动生成相关类， IPidInterface.Stub , IPidInterface.Proxy。 Client 获取 服务端的进程 pid 是通过 IPidInterface 实例 mRemoteService ， mRemoteService 是如何生成的呢？看下 IPidInterface.Stub.asInterface 函数：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> com.rock.proxydemo.<span class="function">IPidInterface <span class="title">asInterface</span><span class="params">(android.os.IBinder obj)</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> com.rock.proxydemo.IPidInterface.Stub.Proxy(obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Proxy</span> <span class="keyword">implements</span> <span class="title">com</span>.<span class="title">rock</span>.<span class="title">proxydemo</span>.<span class="title">IPidInterface</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> android.os.IBinder mRemote;</span><br><span class="line">    Proxy(android.os.IBinder remote) &#123;</span><br><span class="line">        mRemote = remote;</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getPid</span><span class="params">()</span> <span class="keyword">throws</span> android.os.RemoteException </span>&#123;</span><br><span class="line">        android.os.Parcel _data = android.os.Parcel.obtain();</span><br><span class="line">        android.os.Parcel _reply = android.os.Parcel.obtain();</span><br><span class="line">        <span class="keyword">int</span> _result;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            _data.writeInterfaceToken(DESCRIPTOR);</span><br><span class="line">            mRemote.transact(Stub.TRANSACTION_getPid, _data, _reply, <span class="number">0</span>);</span><br><span class="line">            _reply.readException();</span><br><span class="line">            _result = _reply.readInt();</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            _reply.recycle();</span><br><span class="line">            _data.recycle();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> _result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>IPidInterface.Proxy 类实现了 IPidInterface 接口，实现了 getPid 函数。 mRemote 表示是服务端的服务引用，调用 transact 函数，通过标识符 Stub.TRANSACTION_getPid 告知 Server Client 调用的函数，Server 根据此标识符调用 getPid 函数，并将结果返回。</p>
+<p>可以发下，这一过程是一个标准的远程代理， IPidInterface.Proxy 实现和服务端相同的服务接口，保存服务端的引用 mRemote ，通过 mRemote 调用对应的服务函数。</p>
+<h2 id="AOP-中的代理"><a href="#AOP-中的代理" class="headerlink" title="AOP 中的代理"></a>AOP 中的代理</h2><p>代理模式可以在真实对象执行前和执行后添加额外的操作以满足具体的需求，AOP （面向切面编程）中常常会存在这样的场景。</p>
+<p>有这样的需求：统计前面静态代理和动态代理中，真实对象 operation 函数的执行耗时。</p>
+<p>首先使用静态代理实现这样的需求：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProxyObject</span> <span class="keyword">implements</span> <span class="title">IObject</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> RealObject realObject;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ProxyObject</span><span class="params">(RealObject object)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated constructor stub</span></span><br><span class="line">		realObject = object;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">operation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">		realObject.operation();</span><br><span class="line">		<span class="keyword">long</span> end = System.currentTimeMillis();</span><br><span class="line">		System.out.println(<span class="string">"duration:"</span> + Math.abs(end - start));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用动态代理实现,修改 MyProxyHandler：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyProxyHandler</span> <span class="keyword">implements</span> <span class="title">InvocationHandler</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> Object mObject;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyProxyHandler</span><span class="params">(Object obj)</span> </span>&#123;</span><br><span class="line">        mObject = obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    	<span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">        Object object = method.invoke(mObject, args);</span><br><span class="line">        <span class="keyword">long</span> end = System.currentTimeMillis();</span><br><span class="line">		System.out.println(<span class="string">"duration:"</span> + Math.abs(end - start));</span><br><span class="line">        <span class="keyword">return</span> object;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>无论使用静态代理和是动态代理实现，都是在真实对象前后添加逻辑记录时间。</p>
+<p>以上实例是 代理模式在 AOP 的简单应用，AOP 的实现不仅仅是代理这一种方式，还可以使用修改字节码的方式将逻辑添加到 class 文件中实现切面拦截。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>代理模式（也称为委托模式）是一种结构型模式。</li>
+<li>代理类和真实对象要有相同的功能（实现相同的接口）。</li>
+<li>从代码实现上，代理模式分静态代理和动态代理；从应用场景上，代理模式分远程代理，保护代理，虚拟代理，只能引用</li>
+<li>Android 的 Binder 机制中，大量使用了远程代理。远程代理隐藏了服务端的实现细节，使得客户端可以忽略服务端。</li>
+<li>代理模式可以在真实对象执行前后添加逻辑，实现 AOP 。</li>
+</ul>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p>1.《 Android 源码设计模式解析与实战》</p>
+<p>2.《JAVA与模式》之代理模式</p>
+<pre><code>https://www.cnblogs.com/java-my-life/archive/2012/04/23/2466712.html</code></pre><p>3.Java的三种代理模式</p>
+<pre><code>https://www.cnblogs.com/cenyu/p/6289209.html#autoid-0-0-0</code></pre><p>4.Java设计模式——代理模式实现及原理</p>
+<pre><code>https://blog.csdn.net/Goskalrie/article/details/52458773</code></pre><p>5.Java设计模式之代理模式（Proxy）</p>
+<pre><code>https://www.cnblogs.com/whoislcj/p/5693980.html</code></pre>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/05/design-pattern-face/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2141,983 +2841,11 @@ builder.create().show();</code></pre><p>感觉很熟悉，这就是我们最常�
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/04/design-pattern-abstract-factory/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="rockstore">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/go/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Rock">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/go/2020/05/04/design-pattern-abstract-factory/" itemprop="url">抽象工厂</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-04T23:46:29+08:00">
-                2020-05-04
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>简单工厂根据对象类型信息创建对象，但责任太重，不符合单一职责原则；工厂模式引入等级结构，解决了简单工厂责任太重的问题，那抽象工厂的主要作用是什么呢？</p>
-<h2 id="产品等级结构和产品簇"><a href="#产品等级结构和产品簇" class="headerlink" title="产品等级结构和产品簇"></a>产品等级结构和产品簇</h2><p>如果要区分工厂和抽象工厂，理解产品等级结构和产品簇是必要条件。<br><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/abstract_factory_product.jpg" alt=""></p>
-<p>图片引自：<a href="https://www.cnblogs.com/lfxiao/p/6811820.html" target="_blank" rel="noopener">https://www.cnblogs.com/lfxiao/p/6811820.html</a></p>
-<p>上图展示了产品等级和产品簇之间的区别。在横坐标方向，图形分正方形，原型，椭圆；在纵坐标方向上，为每种图形的不同颜色。产品等级结构是相同产品的不同表现形式，比如车-&gt;黑色的车-&gt;白色的车，在产品等级结构中，所有的产品都有共同的基类；产品族是具有某种相同属性的不同产品，比如黑色的宝马车-&gt;黑色的自行车-&gt;黑色的手扶拖拉机，在产品族中，所有的产品拥有相同的约束–黑色的车。</p>
-<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>为创建一组或具有相同约束的对象提供一个接口</p>
-<h2 id="适用范围"><a href="#适用范围" class="headerlink" title="适用范围"></a>适用范围</h2><p>一个产品族由相同的约束。比如都是黑色的交通工具，都是黑色的图形……</p>
-<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>在介绍工厂模式时，使用的示例如下：<br><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/factory.png" alt=""><br>工厂的基类<code>Factory</code>定义了<code>createAnimal</code>方法，具体的工厂根据待生产的产品的不同分<code>CatFactory</code>和<code>DogFactory</code>，这两个<code>Factory</code>的子类分别用于新建<code>Cat</code>对象和<code>Dog</code>对象。</p>
-<p>假设现在对猫<code>Animal</code>进行具体化，分为黑颜色的猫<code>BlackCat</code>，白颜色的猫<code>WhiteCat</code>，黑颜色的狗<code>BlackDog</code>，白颜色的狗<code>WhiteDog</code>，如果使用工厂模式，结构图如下：<br><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/factory_update.png" alt=""></p>
-<p>可以发现系统中的类会成对增加，造成这种情况的原因在于每个工厂只能生产一种具体的产品，每增加一个产品均需要新建一个工厂，那有没有什么方法能够避免这种情况的出现呢？</p>
-<p>在以上的示例中，白色的狗<code>WhiteDog</code>和白色的猫<code>WhiteCat</code>都是相同颜色的动物，相同颜色的狗和猫是相同颜色的小动物，将他们放在同一个产品簇中，修改后的结构如下：<br><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/abstract_factory.png" alt=""> </p>
-<p>如果继续添加黑色的猪<code>BlackPig</code>，白色的猪<code>WhitePig</code>，则只需要增加新的Animal类型，在Factory中添加对应的create方法即可，不会出现类急剧增多的情况。</p>
-<p>具体实现如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public interface Animal &#123;</span><br><span class="line">	void eat();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public class Cat implements Animal &#123;</span><br><span class="line">	</span><br><span class="line">	private String color;</span><br><span class="line">	</span><br><span class="line">	public Cat(String color) &#123;</span><br><span class="line">		&#x2F;&#x2F; TODO Auto-generated constructor stub</span><br><span class="line">		this.color &#x3D; color;</span><br><span class="line">	&#125;</span><br><span class="line">	@Override</span><br><span class="line">	public void eat() &#123;</span><br><span class="line">		&#x2F;&#x2F; TODO Auto-generated method stub</span><br><span class="line">		System.out.println(color + &quot; cat eats&quot;);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public class Dog implements Animal &#123;</span><br><span class="line">	</span><br><span class="line">	private String color;</span><br><span class="line">	</span><br><span class="line">	public Dog(String color) &#123;</span><br><span class="line">		&#x2F;&#x2F; TODO Auto-generated constructor stub</span><br><span class="line">		this.color &#x3D; color;</span><br><span class="line">	&#125;</span><br><span class="line">	@Override</span><br><span class="line">	public void eat() &#123;</span><br><span class="line">		&#x2F;&#x2F; TODO Auto-generated method stub</span><br><span class="line">		System.out.println(color + &quot; dog eats&quot;);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public abstract class AbstractAnimalFactory &#123;</span><br><span class="line">	abstract Animal makeCat();</span><br><span class="line">	abstract Animal makeDog();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public class BlackAnimalFactory extends AbstractAnimalFactory &#123;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	Animal makeCat() &#123;</span><br><span class="line">		&#x2F;&#x2F; TODO Auto-generated method stub</span><br><span class="line">		return new Cat(&quot;black&quot;);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	Animal makeDog() &#123;</span><br><span class="line">		&#x2F;&#x2F; TODO Auto-generated method stub</span><br><span class="line">		return new Dog(&quot;black&quot;);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public class WhiteAnimalFactory extends AbstractAnimalFactory &#123;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	Animal makeCat() &#123;</span><br><span class="line">		&#x2F;&#x2F; TODO Auto-generated method stub</span><br><span class="line">		return new Cat(&quot;white&quot;);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	Animal makeDog() &#123;</span><br><span class="line">		&#x2F;&#x2F; TODO Auto-generated method stub</span><br><span class="line">		return new Dog(&quot;white&quot;);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试代码如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String [] args) &#123;</span><br><span class="line">		</span><br><span class="line">		AbstractAnimalFactory whiteAnimalFactory &#x3D; new WhiteAnimalFactory();</span><br><span class="line">		Cat whiteCat &#x3D; (Cat) whiteAnimalFactory.makeCat();</span><br><span class="line">		Dog whiteDog &#x3D; (Dog) whiteAnimalFactory.makeDog();</span><br><span class="line">		whiteCat.eat();</span><br><span class="line">		whiteDog.eat();</span><br><span class="line">		</span><br><span class="line">		AbstractAnimalFactory blackAnimalFactory &#x3D; new BlackAnimalFactory();</span><br><span class="line">		Cat blackCat &#x3D; (Cat) blackAnimalFactory.makeCat();</span><br><span class="line">		Dog blackDog &#x3D; (Dog) blackAnimalFactory.makeDog();</span><br><span class="line">		blackCat.eat();</span><br><span class="line">		blackDog.eat();</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
-
-<p>运行结果如下：</p>
-<pre><code>white cat eats
-white dog eats
-black cat eats
-black dog eats</code></pre><h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>似乎抽象工厂很完美，现在有一个新的需求过来了，需要在系统中添加白色的猪<code>WhitePig</code>和黑色的猪<code>BlackPig</code>。突然发现在原有的抽象工厂结构中，如果需要添加这两种Animal，需要对<code>Factory</code>进行修改，添加<code>makePig</code>方法，同时<code>WhiteAnimalFactory</code>和<code>BlackAnimalFactory</code>都需要实现<code>makePig</code>方法。</p>
-<p>这样的设计违反了开闭原则(一个软件实体应当对扩展开放，对修改关闭)，有没有什么办法解决这个问题呢？抽象工厂无法解决这样的问题。可以发现，使用抽象工厂时，增加产品族（在本文中可以理解为为现有动物添加新的颜色分类）可以满足开闭原则，但是增加产品等级结构（在本文中可以理解为增加新的动物），就需要对原结构进行大量的修改。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>简单工厂侧重根据类型信息创建对象，但是不符合单一职责原则；工厂模式中每个工厂只生产一种具体的产品，如果产品过多，可能会导致系统中存在大量的工厂类；抽象工厂将工厂模式中相关的产品组成产品族，由一个工厂生产，减少了系统中类的数量</li>
-<li>使用抽象工厂增加产品族符合开闭原则，但增加产品等级结构不满足开闭原则</li>
-<li>在使用抽象工厂模式之前，需要设计好产品族和产品等级结构，防止由于增加产品等级结构而造成系统大幅度的改动</li>
-</ul>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/04/design-pattern-factory/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="rockstore">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/go/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Rock">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/go/2020/05/04/design-pattern-factory/" itemprop="url">工厂模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-04T23:41:56+08:00">
-                2020-05-04
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>相对于其他设计模式，工厂模式从概念上很好理解，就是将对象创建工作交给一个工厂，工厂根据需求返回我们需要的对象。但在Android开发过程中，感觉涉及到的工厂模式并不多，本文将从<code>Activity</code>实例创建入手，分析工厂模式在Android中的应用。</p>
-<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>定义对象创建的接口，根据需求返回对象实例。</p>
-<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><h3 id="简单工厂"><a href="#简单工厂" class="headerlink" title="简单工厂"></a>简单工厂</h3><p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/simple_factory.png" alt=""><br>其实使用工厂模式时，简单工厂常常会被我们忽略，以上为简单工厂的UML类图，我们首先看下简单工厂。</p>
-<pre><code>interface Animal {
-    abstract void eat();
-}
-
-class Dog implements Animal {
-
-    @Override
-    public void eat() {
-        // TODO Auto-generated method stub
-        System.out.println(&quot;dog eats&quot;);
-    }
-
-}
-
-class Cat implements Animal {
-    @Override
-    public void eat() {
-        // TODO Auto-generated method stub
-        System.out.println(&quot;cat eats&quot;);
-    }
-}
-
-class SimpleFactory {
-    public static Animal makeAnimal(int type) {
-        switch (type) {
-        case 1:
-            return new Dog();
-        case 2:
-            return new Cat();
-        default:
-                return null;
-        }
-    }
-}</code></pre><p>测试代码：</p>
-<pre><code>public static void main(String [] args) {
-    Animal animal1 = SimpleFactory.makeAnimal(1);
-    Animal animal2 = SimpleFactory.makeAnimal(2);
-    animal1.eat();
-    animal2.eat();
-}</code></pre><p>程序运行结果：</p>
-<pre><code>dog eats
-cat eats</code></pre><p>简单工厂模式将所有类型对象的创建工作放在一个方法中，根据条件语句判断创建对象。</p>
-<h3 id="工厂"><a href="#工厂" class="headerlink" title="工厂"></a>工厂</h3><p>简单工厂将所有类型对象的创建工作放在一个方法中，这种设计简化了对象的创建；抽象工厂的缺点也是显而易见的，这样的设计违反了高内聚单一职责原则，简单工厂负责所有对象的创建，如果需要添加新的类型，则需要修改简单工厂。接下来就分析下工厂的实现。</p>
-<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/factory.png" alt=""></p>
-<pre><code>interface Animal {
-    void eat();
-}
-
-class Dog implements Animal {
-
-    @Override
-    public void eat() {
-        // TODO Auto-generated method stub
-        System.out.println(&quot;dog eats&quot;);
-    }
-
-}
-
-class Cat implements Animal {
-    @Override
-    public void eat() {
-        // TODO Auto-generated method stub
-        System.out.println(&quot;cat eats&quot;);
-    }
-}
-
-abstract class Factory {
-    abstract Animal createAnimal();
-}
-
-class DogFactory extends Factory {
-
-    @Override
-    Animal createAnimal() {
-        // TODO Auto-generated method stub
-        return new Dog();
-    }
-}
-
-class CatFactory extends Factory {
-    @Override
-    Animal createAnimal() {
-        // TODO Auto-generated method stub
-        return new Cat();
-    }
-}</code></pre><p>测试代码：</p>
-<pre><code>public static void main(String [] args) {
-    DogFactory dogFactory = new DogFactory();
-    CatFactory catFactory = new CatFactory();
-    Animal dog = dogFactory.createAnimal();
-    Animal cat = catFactory.createAnimal();
-    dog.eat();
-    cat.eat();
-}</code></pre><p>程序运行结果：</p>
-<pre><code>dog eats
-cat eats</code></pre><p>相对于简单工厂，工厂将对象的创建做了抽象，不同对象使用不同的工厂进行创建，这样的设计符合高内聚职责单一的原则，让子类可以创建自己的工厂，降低了工厂和具体对象之间的耦合。</p>
-<h2 id="Android中工厂模式的使用"><a href="#Android中工厂模式的使用" class="headerlink" title="Android中工厂模式的使用"></a>Android中工厂模式的使用</h2><p>Android中Activity实例的创建是容易被我们忽略的工厂模式的使用。Activity实例的新建实在<code>ActivityThread</code>的<code>performLaunchActivity</code>方法中完成的。</p>
-<pre><code>private Activity performLaunchActivity(ActivityClientRecord r, Intent customIntent) {
-    ......
-    Activity activity = null;
-    try {
-        java.lang.ClassLoader cl = appContext.getClassLoader();
-        activity = mInstrumentation.newActivity(
-                cl, component.getClassName(), r.intent);
-        ......
-    } catch (Exception e) {
-        ......
-    }
-
-    try {
-        ......
-            if (r.isPersistable()) {
-                mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);
-            } else {
-                mInstrumentation.callActivityOnCreate(activity, r.state);
-            }
-            ......
-        }
-        r.setState(ON_CREATE);
-
-        mActivities.put(r.token, r);
-
-    } catch (SuperNotCalledException e) {
-        throw e;
-
-    } catch (Exception e) {
-        ......
-    }
-
-    return activity;
-}</code></pre><p>略去了和<code>Activity</code>实例创建无关的代码。可以看到<code>Activity</code>实例创建完成后，接下来会执行<code>mInstrumentation.callActivityOnCreate</code>方法，也就是会执行<code>Activity</code>的<code>onCreate</code>方法。我们关注的是<code>Activity</code>实例的创建，需要深入<code>mInstrumentation.newActivity(cl, component.getClassName(), r.intent)</code>方法看下：</p>
-<pre><code>public Activity newActivity(ClassLoader cl, String className,
-        Intent intent)
-        throws InstantiationException, IllegalAccessException,
-        ClassNotFoundException {
-    String pkg = intent != null &amp;&amp; intent.getComponent() != null
-            ? intent.getComponent().getPackageName() : null;
-    return getFactory(pkg).instantiateActivity(cl, className, intent);
-}</code></pre><p>是不是看到<code>getFactory</code>方法了，隐隐约约嗅到了工厂，哈哈。</p>
-<pre><code>private AppComponentFactory getFactory(String pkg) {
-    if (pkg == null) {
-        Log.e(TAG, &quot;No pkg specified, disabling AppComponentFactory&quot;);
-        return AppComponentFactory.DEFAULT;
-    }
-    if (mThread == null) {
-        Log.e(TAG, &quot;Uninitialized ActivityThread, likely app-created Instrumentation,&quot;
-                + &quot; disabling AppComponentFactory&quot;, new Throwable());
-        return AppComponentFactory.DEFAULT;
-    }
-    LoadedApk apk = mThread.peekPackageInfo(pkg, true);
-    // This is in the case of starting up &quot;android&quot;.
-    if (apk == null) apk = mThread.getSystemContext().mPackageInfo;
-    return apk.getAppFactory();
-}</code></pre><p>再深入看下<code>getAppFactory</code>方法返回的是什么：</p>
-<pre><code>public AppComponentFactory getAppFactory() {
-    return mAppComponentFactory;
-}</code></pre><p>ok，继续，到<code>AppComponentFactory</code>中找下<code>instantiateActivity</code>这个方法：</p>
-<pre><code>public @NonNull Activity instantiateActivity(@NonNull ClassLoader cl, @NonNull String className,
-        @Nullable Intent intent)
-        throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-    return (Activity) cl.loadClass(className).newInstance();
-}</code></pre><p>可以看到，系统将对<code>Activity</code>实例的创建封装为<code>instantiateActivity</code>，方法，只需要传入<code>classloader</code>以及<code>className</code>即可创建实例了。创建<code>Activity</code>实例的过程也告诉我们，<code>Activity</code>的创建使用的是默认无参构造函数。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>简单工厂封装了对象的创建过程，但是在实现时工厂和对象高度耦合，违背了高内聚单一职责</li>
-<li>工厂模式在简单工厂的基础上将工厂抽象，不同的工厂可以创建不同的实例，工厂和对象解耦，实现了高内聚单一职责。</li>
-</ul>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://rockstore.github.io/go/go/2020/05/04/design-pattern-singleton/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="rockstore">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/go/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Rock">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/go/2020/05/04/design-pattern-singleton/" itemprop="url">单例模式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-04T22:07:27+08:00">
-                2020-05-04
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/go/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index">
-                    <span itemprop="name">设计模式</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在开发过程中也经常涉及到设计模式，对设计模式的总结也仅仅是遇到了梳理一下，没有系统总结过，从这篇文章开始就总结一下java中的设计模式，并结合android做一下分析。</p>
-<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/Desigin-Pattern.png" alt=""></p>
-<p>以上为前辈大佬总结的java设计模式，分三大类：创建型模式，结构型模式以及行为型模式，后面也会按照以上顺序进行分析。本文先分析开发中经常使用的单例模式。</p>
-<p><img src="https://raw.githubusercontent.com/rockstore/images/master/design_pattern/singleton.png" alt=""></p>
-<p>以上为单例模式的UML，总结一下，实现单例模式需要有如下关键点：</p>
-<blockquote>
-<p>(1) 构造函数为是私有，不对外公开<br>(2) 通过一个静态方法或者枚举返回单例对象<br>(3) 确保单例对象只有一个，尤其是在多线程环境中<br>(4) 确保在反序列化的过程不会新建单例对象</p>
-</blockquote>
-<p>在开发过程中，通常会关注前3点，第四点常常会被忽略，后面的分析中会对第4点进行分析。</p>
-<p>提起单例模式，最熟悉的就是饿汉和懒汉这两个概念了，虽然很熟悉，还是要梳理一下。</p>
-<h2 id="懒汉模式"><a href="#懒汉模式" class="headerlink" title="懒汉模式"></a>懒汉模式</h2><p>懒汉模式实在需要单例对象的时候再创建单例对象的一种模式，有lazy loading的效果，在一定层度上提高了内存的使用效率。</p>
-<pre><code>public class Singleton {
-    private static Singleton sInstance = null;
-
-    private Singleton() {}
-
-    public static Singleton getInstance() {
-        if (sInstance == null) {
-            sInstance = new Singleton();
-        }
-        return sInstance;
-    }
-}</code></pre><p>这种懒汉模式在单线程环境下没有问题，但是在多线程环境中<code>getInstance</code>可能会返回多个实例，于是就有了以下改进</p>
-<pre><code>public class Singleton {
-
-    private static Singleton sInstance = null;
-
-    private Singleton() {}
-
-    public static synchronized Singleton getInstance() {
-        if (sInstance == null) {
-            sInstance = new Singleton();
-        }
-        return sInstance;
-    }
-}</code></pre><p>通过对<code>getInstance</code>方法加锁，保证了在多线程环境中仅返回同一个实例。但是这样的做法缺点也十分明显，即使<code>sInstance</code>对象已经被新建，每次调用<code>getInstance</code>时都存在加锁与释放锁的操作，这样会消耗不必要的资源。经过改进，就有了以下实现：</p>
-<pre><code>public class Singleton {
-
-    private static Singleton sInstance = null;
-
-    private Singleton() {}
-
-    public static Singleton getInstance() {
-        if (sInstance == null) {
-            synchronized (Singleton.class) {
-                if (sInstance == null) {
-                    sInstance = new Singleton();
-                }
-            }
-        }
-        return sInstance;
-    }
-}</code></pre><p>经过改进后，调用<code>getInstance</code>不会进行加锁操作，而是会先判断单例对象是否为空，如果为空，则同步去新建单例对象，并在同步新建对象之前再次判断单例对象是否为空，这种方式被称为双重检查锁(DCL),这种方式看似不会出现什么问题了，但分析之后发现还是可能有问题。</p>
-<pre><code>sInstance = new Singleton();</code></pre><p>以上语句实际上经过了以下3个步骤：<br>(1)为Singleton单例对象分配内存空间<br>(2)调用Singleton构造函数，初始化Singleton单例对象<br>(3)将sInstance引用指向已经分配的内存空间</p>
-<p>以上3个步骤中，步骤(2)和步骤(3)可能被重新排序，最终导致执行的顺序可能是(1)(3)(2)，假设在多线程环境中多个线程尝试调用<code>getInstance</code>函数获取Singleton单例，线程1调用<code>getInstance</code>时，<code>sInstance</code>的对象为空，调用<code>sInstance = new Singleton()</code>的执行顺序是(1)(3)(2)，线程1执行到步骤(3)时，线程2也去调用<code>getInstance</code>，此时sIntance对象不为空，但是<code>sInstance</code>指向的对象却是没有被初始化的对象。在jdk1.5之前会存在以上问题，但是在jdk1.5后，<code>volatile</code>的语义得到增强，只需要使用<code>private static volatile Singleton sInstance = null</code>便可以消除指令重排。</p>
-<h2 id="饿汉模式"><a href="#饿汉模式" class="headerlink" title="饿汉模式"></a>饿汉模式</h2><p>饿汉模式，顾名思义，就是无论现在是否需要单例对象，都要初始化单例对象。</p>
-<pre><code>public class Singleton {
-
-    private static Singleton sInstance = new Singleton();
-
-    private Singleton() {}
-
-    public static Singleton getInstance() {
-        return sInstance;
-    }
-}</code></pre><p>以上为经典十分常见的饿汉单例模式，这种创建方式会在类加载的时候就创建实例，没有lazy loading的效果，如果Singleton实例需要占用很大的内存空间，会导致内存的利用率较低。基于以上原因，优化后的代码如下：</p>
-<pre><code>public class Singleton {
-    private Singleton(){
-
-    }
-    private static class SingletonHolder{
-        private final static Singleton instance=new Singleton();
-    }
-    public static Singleton getInstance(){
-        return SingletonHolder.instance;
-    }
-}</code></pre><p>当第一次加载<code>Singleton</code>类时，并不会新建单例对象，当调用<code>getInstance</code>方法时，会加载<code>SingletonHolder</code>类，这种方法不仅能够确保线程安全，也能保证对象的唯一性，同时也有lazy loading的效果。</p>
-<h2 id="对象创建的方式"><a href="#对象创建的方式" class="headerlink" title="对象创建的方式"></a>对象创建的方式</h2><p>前面说过，实现单例需要确保在反序列化的过程不会新建单例对象，说到序列化，先岔开一下，回忆下java对象的创建方式：</p>
-<p>(1) new<br>(2) Class.newInstance<br>(3) Constructor.newInstance<br>(4) clone<br>(5) 反序列化</p>
-<p>其中使用(1)(2)(3)会调用构造函数，(4)(5)不会调用类的构造函数。</p>
-<p>为了验证在clone和反序列化过程中不会调用构造函数，可以使用简单的demo演示：</p>
-<pre><code>public class Singleton implements Cloneable, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    private static Singleton sInstance = null;
-
-    private Singleton() {
-        System.out.println(&quot;create a singleton&quot;);
-    }
-
-    public static Singleton getInstance() {
-        if (sInstance == null) {
-            synchronized (Singleton.class) {
-                if (sInstance == null) {
-                    sInstance = new Singleton();
-                }
-            }
-        }
-        return sInstance;
-    }
-
-    public static void main(String [] args) {
-        try {
-            Singleton singleton = Singleton.getInstance();
-
-            // test clone
-            Singleton singleton3 = (Singleton) singleton.clone();
-            System.out.println(singleton == singleton3);</code></pre><p>​<br>                // write single to file<br>                ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(“test.dat”)));<br>                oos.writeObject(singleton);<br>                oos.flush();<br>                oos.close();</p>
-<pre><code>            // read single from file
-            ObjectInputStream ois = new ObjectInputStream(new FileInputStream(new File(&quot;test.dat&quot;)));
-            Singleton singleton2 = (Singleton) ois.readObject();
-            ois.close();
-            if (singleton2 == null) {
-                System.err.println(&quot;can not read singleton from file&quot;);
-            } else {
-                System.out.println(singleton == singleton2);
-            }
-
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-
-    }
-}</code></pre><p>为了演示，Singleton类实现了Cloneable和Serializable接口，运行程序结果如下：<br>create a singleton<br>false<br>false</p>
-<p>从结果中可以看出，使用clone和反序列化构建的对象不会执行构造函数，且通过clone和反序列化得到的对象并不是调用<code>getInstance</code>返回的单例对象。</p>
-<p>好在反序列化提供了一个很特别的钩子函数<code>readResolve</code>，让开发人员可以去控制反序列化的过程，经过修改后的代码如下：</p>
-<pre><code>public class Singleton implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    private static Singleton sInstance = null;
-
-    private Singleton() {
-        System.out.println(&quot;create a singleton&quot;);
-    }
-
-    public static Singleton getInstance() {
-        if (sInstance == null) {
-            synchronized (Singleton.class) {
-                if (sInstance == null) {
-                    sInstance = new Singleton();
-                }
-            }
-        }
-        return sInstance;
-    }
-
-    private Object readResolve() throws ObjectStreamException {
-        return getInstance();
-    }
-
-    public static void main(String [] args) {
-        try {
-
-            Singleton singleton = Singleton.getInstance();
-
-            // write single to file
-            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(&quot;test.dat&quot;)));
-            oos.writeObject(singleton);
-            oos.flush();
-            oos.close();
-
-            // read single from file
-            ObjectInputStream ois = new ObjectInputStream(new FileInputStream(new File(&quot;test.dat&quot;)));
-            Singleton singleton2 = (Singleton) ois.readObject();
-            ois.close();
-            if (singleton2 == null) {
-                System.err.println(&quot;can not read singleton from file&quot;);
-            } else {
-                System.out.println(singleton == singleton2);
-            }
-
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-
-    }
-
-}</code></pre><p>程序运行结果如下：</p>
-<p>create a singleton<br>true</p>
-<p>通过运行结果可以看到，经过反序列化操作返回的对象和<code>getInstance</code>返回的对象是同一个。</p>
-<h2 id="枚举实现"><a href="#枚举实现" class="headerlink" title="枚举实现"></a>枚举实现</h2><pre><code>public enum EnumSingleton {
-    INSTANCE;
-
-    public void enumDo() {
-        System.out.println(&quot;EnumSingleton want to do something&quot;);
-    }
-}</code></pre><p>使用枚举实现单例，既保证了线程安全，同时也可以防止在反序列化过程中新建单例对象。虽然Effective Java中推荐使用这种方式，但在Android平台上，这种方式会对内存造成严重的浪费，可参考<a href="https://blog.csdn.net/xiao_nian/article/details/80002101，谷歌官方明确指出" target="_blank" rel="noopener">https://blog.csdn.net/xiao_nian/article/details/80002101，谷歌官方明确指出</a></p>
-<blockquote>
-<p>Enums ofter require more than twice as much memory as static constants. You should strictly avoid using enums on Android.</p>
-</blockquote>
-<p>因此，枚举单例在Android平台上就不要使用了。</p>
-<h2 id="容器单例"><a href="#容器单例" class="headerlink" title="容器单例"></a>容器单例</h2><p>容器单例，就是将单例对象存放在容器中进行统一管理，这样便于对系统中的单例进行统一管理。</p>
-<pre><code>public class SingletonManager {
-    private SingletonManager() {}
-
-    private static HashMap&lt;String, Object&gt; sSingletonManager = new HashMap&lt;&gt;();
-
-    public static Object getSingleton(String name) {
-        return sSingletonManager.get(name);
-    }
-
-    public static void putSingleton(String name, Object singleton) {
-        if (!sSingletonManager.containsKey(name)) {
-            sSingletonManager.put(name, singleton);
-        }
-    }
-}</code></pre><h2 id="Android中单例使用"><a href="#Android中单例使用" class="headerlink" title="Android中单例使用"></a>Android中单例使用</h2><p>Android中单例的使用，本文主要从LayoutInflater的创建入手。不同的Activity之间使用的LayoutInflater是不同的实例，但是每个Activity内部使用的LayoutInflater确是同一个实例。接下来就从源码角度去分析一下。</p>
-<p>构造LayoutInflater通常有两种方式：</p>
-<ul>
-<li>LayoutInflater inflater = LayoutInflater.from(Activity);</li>
-<li>LayoutInflater inflater = (LayoutInflater) Activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE)</li>
-</ul>
-<p>第一种方式实际上最后也是调用了第二种方式，故后续只分析第二种。直接到Activity中找到<code>getSystemService</code>函数：</p>
-<pre><code>@Override
-public Object getSystemService(@ServiceName @NonNull String name) {
-    ......
-    return super.getSystemService(name);
-}</code></pre><p>继续跟踪<code>super.getSystemService(name)</code>，由于Activity继承<code>ContextThemeWrapper</code>，执行逻辑如下：</p>
-<pre><code>@Override
-public Object getSystemService(String name) {
-    if (LAYOUT_INFLATER_SERVICE.equals(name)) {
-        if (mInflater == null) {
-            mInflater = LayoutInflater.from(getBaseContext()).cloneInContext(this);
-        }
-        return mInflater;
-    }
-    return getBaseContext().getSystemService(name);
-}</code></pre><p>又回到了<code>LayoutInflater.from</code>逻辑，<code>LayoutInflater.from</code>逻辑实际上最后又走到了<code>getSystemService</code>的逻辑。先看下<code>getBaseContext()</code>函数返回了什么东西。<code>getBaseContext</code>是<code>ContextThemeWrapper</code>的父类<code>ContextWrapper</code>中定义的函数，<code>getBaseContext()</code>函数返回了类型为<code>Context</code>的<code>mBase</code>实例，这个<code>mBase</code>是在<code>ContextWrapper</code>的<code>attachBaseContext</code>函数中赋值的，<code>attachBaseContext</code>又是在什么时候调用的呢？</p>
-<p><code>attachBaseContext</code>的调用需要追溯到<code>ActivityThread</code>类的<code>performLaunchActivity</code>函数：</p>
-<pre><code>private Activity performLaunchActivity(ActivityClientRecord r, Intent customIntent) {
-    ......
-    ContextImpl appContext = createBaseContextForActivity(r);
-    Activity activity = null;
-    try {
-        java.lang.ClassLoader cl = appContext.getClassLoader();
-        activity = mInstrumentation.newActivity(
-                cl, component.getClassName(), r.intent);
-        ......
-    } catch (Exception e) {
-        ......
-    }
-
-    try {
-        ......
-            activity.attach(appContext, this, getInstrumentation(), r.token,
-                    r.ident, app, r.intent, r.activityInfo, title, r.parent,
-                    r.embeddedID, r.lastNonConfigurationInstances, config,
-                    r.referrer, r.voiceInteractor, window, r.configCallback);
-
-        ......
-    } catch (SuperNotCalledException e) {
-        throw e;
-
-    } catch (Exception e) {
-        .....
-    }
-    return activity;
-}</code></pre><p>继续跟踪下<code>activity.attach</code>：</p>
-<pre><code>final void attach(Context context, ActivityThread aThread,
-        Instrumentation instr, IBinder token, int ident,
-        Application application, Intent intent, ActivityInfo info,
-        CharSequence title, Activity parent, String id,
-        NonConfigurationInstances lastNonConfigurationInstances,
-        Configuration config, String referrer, IVoiceInteractor voiceInteractor,
-        Window window, ActivityConfigCallback activityConfigCallback) {
-    attachBaseContext(context);
-
-    ......
-}</code></pre><p>可以发现，<code>mBase</code>就是通过<code>createBaseContextForActivity(r)</code>创建的<code>ContextImpl</code>类型的实例对象（感兴趣的同学可以跟踪下这个函数），由于每个Activity都会执行次函数，故不同的Activity的mBase是不同的<code>ContextImpl</code>类型的实例对象。</p>
-<p>解决了<code>getBaseContext()</code>返回值的问题，继续回到<code>LayoutInflater.from(getBaseContext())</code>这个函数，这个函数最终会走到<code>ContextImpl.getSystemService</code>:</p>
-<pre><code>@Override
-public Object getSystemService(String name) {
-    return SystemServiceRegistry.getSystemService(this, name);
-}</code></pre><p>代码有点深，别着急，再到<code>SystemServiceRegistry</code>类中看一下。<code>SystemServiceRegistry</code>类中有一个静态块，这个静态块会调用<code>registerService</code>方法去注册服务：</p>
-<pre><code>registerService(Context.LAYOUT_INFLATER_SERVICE, LayoutInflater.class,
-            new CachedServiceFetcher&lt;LayoutInflater&gt;() {
-        @Override
-        public LayoutInflater createService(ContextImpl ctx) {
-            return new PhoneLayoutInflater(ctx.getOuterContext());
-        }});</code></pre><p>到这个位置，好像豁然开朗了。继续跟踪一下<code>SystemServiceRegistry.getSystemService(this, name)</code></p>
-<pre><code>public static Object getSystemService(ContextImpl ctx, String name) {
-    ServiceFetcher&lt;?&gt; fetcher = SYSTEM_SERVICE_FETCHERS.get(name);
-    return fetcher != null ? fetcher.getService(ctx) : null;
-}</code></pre><p>此处的<code>ctx</code>参数是前面的<code>mBase</code>，<code>name</code>是<code>Context.LAYOUT_INFLATER_SERVICE</code>，由于已经注册了<code>CachedServiceFetcher</code>，直接到<code>CachedServiceFetcher</code>看下<code>getService</code>函数：</p>
-<pre><code>static abstract class CachedServiceFetcher&lt;T&gt; implements ServiceFetcher&lt;T&gt; {
-    private final int mCacheIndex;
-
-    CachedServiceFetcher() {
-        ......
-        mCacheIndex = sServiceCacheSize++;
-    }
-
-    @Override
-    @SuppressWarnings(&quot;unchecked&quot;)
-    public final T getService(ContextImpl ctx) {
-        // mServiceCache是ContextImpl的变量，用户缓存已经获取过的服务对象
-        final Object[] cache = ctx.mServiceCache;
-        final int[] gates = ctx.mServiceInitializationStateArray;
-
-        for (;;) {
-            boolean doInitialize = false;
-            synchronized (cache) {
-                // 如果待获取的服务对象已经存在，则直接返回缓存中的对象
-                T service = (T) cache[mCacheIndex];
-                if (service != null || gates[mCacheIndex] == ContextImpl.STATE_NOT_FOUND) {
-                    return service;
-                }
-                ......
-            }
-
-            if (doInitialize) {
-                // Only the first thread gets here.
-
-                T service = null;
-                @ServiceInitializationState int newState = ContextImpl.STATE_NOT_FOUND;
-                try {
-                    // 缓存中没有服务对象，则需要执行createService去创建对象
-                    service = createService(ctx);
-                    newState = ContextImpl.STATE_READY;
-
-                } catch (ServiceNotFoundException e) {
-                    onServiceNotFound(e);
-
-                } finally {
-                    ......
-                }
-                return service;
-            }
-            ......
-        }
-    }
-
-    public abstract T createService(ContextImpl ctx) throws ServiceNotFoundException;
-}</code></pre><p>至此，Android同一个Activity内LayoutInflater为同一个对象的原理从源码角度已经分析完毕。总结一下就是以下流程：<br>Activity ContextImpl缓存中是否存在LayoutInflater对象，如果已经存在，则直接返回缓存的对象，如果没有则新建LayoutInflater对象，同时，通过源码分析，也知道LayoutInflater的最终实现是PhoneLayoutInflater。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>饿汉模式会在类加载时完成单例对象的初始化，虽然确保了线程安全，但是可能会引起内存使用效率降低</li>
-<li>懒汉模式会在需要使用单例对象时完成单例对象的初始化，有lazy loading，提高了内存使用率，但是为了保证线程安全，在新建单例对象时添加了锁机制；多线程环境下，锁机制可能会降低程序运行效率，故引入了DCL，由于存在指令重排的可能，故DCL机制可能存在失效的情况，为了防止DCL失效，jdk1.5之后需要volatile对单例对象进行修饰</li>
-<li>使用静态内部类的方式实现单例，既有lazy loading的效果，又可以利用类的加载机制保证线程安全</li>
-<li>由于反序列化新建对象不需要执行构造函数，单例模式需要防止反序列化时新建单例对象</li>
-<li>Activity 对象内部ContextImpl会对LayoutInflater对象进行缓存，如果已经存在，则直接返回缓存对象</li>
-</ul>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/go/page/2/">&lt;</a><a class="page-number" href="/go/">1</a><a class="page-number" href="/go/page/2/">2</a><span class="page-number current">3</span>
+    <a class="extend prev" rel="prev" href="/go/page/2/">&lt;</a><a class="page-number" href="/go/">1</a><a class="page-number" href="/go/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/go/page/4/">4</a><a class="extend next" rel="next" href="/go/page/4/">&gt;</a>
   </nav>
 
 
@@ -3163,7 +2891,7 @@ public Object getSystemService(String name) {
               
                 <a href="/go/archives%7C%7C%20archive">
               
-                  <span class="site-state-item-count">30</span>
+                  <span class="site-state-item-count">33</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -3174,7 +2902,7 @@ public Object getSystemService(String name) {
               
               <div class="site-state-item site-state-categories">
                 <a href="/go/categories/index.html">
-                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-count">9</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
